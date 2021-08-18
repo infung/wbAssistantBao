@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>大秘书·饱</title>
+    <link rel="stylesheet" type="text/css" href="main.css">
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+
+<body>
+    <div class="content">
+        <div>
+            <header>
+                <svg width="20" height="20" style="vertical-align: text-bottom !important; color: #DCC898" data-prefix="fas" data-icon="dog" class="svg-inline--fa fa-dog fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="currentColor" d="M298.06,224,448,277.55V496a16,16,0,0,1-16,16H368a16,16,0,0,1-16-16V384H192V496a16,16,0,0,1-16,16H112a16,16,0,0,1-16-16V282.09C58.84,268.84,32,233.66,32,192a32,32,0,0,1,64,0,32.06,32.06,0,0,0,32,32ZM544,112v32a64,64,0,0,1-64,64H448v35.58L320,197.87V48c0-14.25,17.22-21.39,27.31-11.31L374.59,64h53.63c10.91,0,23.75,7.92,28.62,17.69L464,96h64A16,16,0,0,1,544,112Zm-112,0a16,16,0,1,0-16,16A16,16,0,0,0,432,112Z"></path></svg>                大秘书·饱
+            </header>
+            <hr style="background-color: rgba(240, 255, 240, 0.192); width: 75px;" />
+            <div class="tab">
+                <ul class="nav nav-pills flex-column" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="pill" href="#weiboData">日常数据</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="pill" href="#zpz">转评赞</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="control">
+                <div id="controlCentre">
+                    <section>
+                        <label class="checkbox-container">日常数据
+                            <input type="checkbox" id="weiboDataControl" checked="checked" >
+                            <span class="checkmark"></span>
+                        </label>
+                    </section>
+                    <section>
+                        <label class="checkbox-container">转评赞
+                            <input type="checkbox" id="zpzControl" checked="checked" >
+                            <span class="checkmark"></span>
+                        </label>
+                    </section>
+                </div>
+                <div id="controlbutton">
+                    <button id="sendbutton" class="btn btn-primary">发送</button>
+                    <button id="stopbutton" class="btn btn-danger">停止</button>
+                    <button id="okbutton" class="btn btn-success">完成</button>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="tab-content">
+                <div id="weiboData" class="container tab-pane active" style="margin-top: 15px; margin-bottom: 20px;">
+                    <div id="sp" class="form-group">
+                        <section>
+                            <div class="custom-control custom-switch left" id="sw" style="display: flex; align-items: center; padding-left: 0;">
+                                <input type="checkbox" class="custom-control-input" id="spCheckIn" checked>
+                                <label class="custom-control-label" for="spCheckIn">超话签到:<span id="spCheckInStatus" style="display: none;">&nbsp;&#10004;</span></label>
+                            </div>
+                        </section>
+                    </div>
+                    <hr/>
+                    <div id="read" class="form-group">
+                        <section>
+                            <div class="custom-control custom-switch left" id="sw" style="display: flex; align-items: center; padding-left: 0;">
+                                <input type="checkbox" class="custom-control-input" id="reading">
+                                <label class="custom-control-label" for="reading">阅读:<span id="readingStatus" style="display: none;">&nbsp;&#10004;</span></label>
+                            </div>
+                        </section>
+                    </div>
+                    <hr/>
+                    <div id="aman" class="form-group">
+                        <section>
+                            <div class="custom-control custom-switch left" id="sw" style="display: flex; align-items: center; padding-left: 0;">
+                                <input type="checkbox" class="custom-control-input" id="amanComment" checked>
+                                <label class="custom-control-label" for="amanComment">艾漫盖楼:<span id="amanCommentStatus" style="display: none;">&nbsp;&#10004;</span></label>
+                            </div>
+                        </section>
+                    </div>
+                    <hr/>
+                    <div id="search" class="form-group">
+                        <section>
+                            <div class="custom-control custom-switch left" id="sw" style="display: flex; align-items: center; padding-left: 0;">
+                                <input type="checkbox" class="custom-control-input" id="searching" checked>
+                                <label class="custom-control-label" for="searching">艾漫搜索:<span id="searchingStatus" style="display: none;">&nbsp;&#10004;</span></label>
+                            </div>
+                        </section>
+                    </div>
+                    <hr/>
+                    <div id="spZnl" class="form-group">
+                        <section style="display: flex">
+                            <span class="title">艾漫发帖:</span>
+                            <small id="currentSpZnl" class="form-text text-muted" style="flex: 1"></small>
+                        </section>
+                        <section style="display:inline-flex">
+                            <input id="spZnlInput" class="form-control form-control-sm" type="number" value="1" min="0" pattern="\d+"><span class="label">条</span>
+                        </section>
+                    </div>
+                    <hr/>
+                    <div id="mpZnl" class="form-group">
+                        <section style="display: flex">
+                            <span class="title">主页发帖:<!--a href="#" data-toggle="tooltip" data-placement="?" title="输入热搜/话题tag发微博可用于增加热搜/话题讨论度，微博内容为夸夸文案。">&#10068;</a--></span>
+                            <small id="currentMpZnl" class="form-text text-muted" style="flex: 1"></small>
+                        </section>
+                        <section style="display:inline-flex">
+                            <input id="mpZnlInput" class="form-control form-control-sm" type="number" value="1" min="0" pattern="\d+"><span class="label">条</span>
+                        </section>
+                        <section>
+                            <input id="mpZnlTag" class="form-control form-control-sm" type="text" placeholder="话题tag（可不填）" value="" style="width: 100%; font-size: 10px !important;">
+                        </section>
+                    </div>
+                </div>
+                <div id="zpz" class="container tab-pane fade" style="margin-top: 15px; margin-bottom: 15px;">
+                    <div class="form-group">
+                        <section>
+                            <input id="weiboUrl" class="form-control form-control-sm" type="text" placeholder="微博链接" value="" style="width: 100%; border-color: #DCC898;">
+                        </section>
+                    </div>
+                    <hr/>
+                    <div id="repost" class="form-group">
+                        <section style="display: flex">
+                            <span class="title">转发:</span>
+                            <small id="currentRepost" class="form-text text-muted" style="flex: 1"></small>
+                        </section>
+                        <section style="display:inline-flex">
+                            <input id="repostInput" class="form-control form-control-sm" type="number" value="0" min="0" pattern="\d+"><span class="label">条</span>
+                        </section>
+                        <section>
+                            <textarea class="form-control" id="repostContent" placeholder="转发文案" rows="1" style="width: 100%; font-size: 10px;"></textarea>
+                        </section>
+                    </div>
+                    <hr/>
+                    <div id="comment" class="form-group">
+                        <section style="display: flex">
+                            <span class="title">评论:</span>
+                            <small id="currentComment" class="form-text text-muted" style="flex: 1"></small>
+                        </section>
+                        <section style="display:inline-flex">
+                            <input id="commentInput" class="form-control form-control-sm" type="number" value="0" min="0" pattern="\d+"><span class="label">条</span>
+                        </section>
+                        <section>
+                            <textarea class="form-control" id="commentContent" placeholder="评论文案" rows="1" style="width: 100%; font-size: 10px;"></textarea>
+                        </section>
+                    </div>
+                    <hr/>
+                    <div id="like" class="form-group">
+                        <section style="display: flex">
+                            <span class="title">点赞:</span>
+                            <small id="currentLike" class="form-text text-muted" style="flex: 1"></small>
+                        </section>
+                        <section style="display:inline-flex">
+                            <input id="likeInput" class="form-control form-control-sm" type="number" value="0" min="0" pattern="\d+"><span class="label">个</span>
+                        </section>
+                        <section>
+                            <label class="checkbox-container">点赞原微博
+                                <input type="checkbox" id="likeOrigin" checked="checked">
+                                <span class="checkmark"></span>
+                            </label>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <span class="light">*运行前请确保微博账号已在此浏览器上登录，并在旧版微博上使用。</span>
+    </footer>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/popper.min.js"></script>
+    <script type="text/javascript" src="main.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+</body>
