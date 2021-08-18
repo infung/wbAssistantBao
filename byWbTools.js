@@ -387,10 +387,6 @@ async function reposetWeiboWithoutMid(content) {
     inputBox.value = content;
     inputBox.dispatchEvent(new Event('change'));
     await sleep(1000);
-    var textBoxTips = (await getElementsByXPath('//span[@class="tips S_txt2"]')).snapshotItem(0);
-    if (textBoxTips.textContent < 0) {
-        return { 'code': '100001', 'msg': '超过转发字数限制' };
-    }
     postButton.click();
     await sleep(3000);
     var repsonse = await handlePopup();
@@ -408,6 +404,11 @@ async function repostWeibo(numReposts, repostContent) {
     await waitElementPresent('//div[@class="p_input p_textarea"]/textarea');
     var originContent = (await getElementsByXPath('//div[@class="p_input p_textarea"]/textarea')).snapshotItem(0).value;
     if (originContent.lastIndexOf('//', 0) !== 0) originContent = '';
+    //trim repost text content
+    var textLimit = (await getElementsByXPath('//span[@class="tips S_txt2"]')).snapshotItem(0).textContent;
+    if (textLimit < 6) {
+        originContent = originContent.substring(0, originContent.length - (8 - textLimit));
+    }
     var response = null;
     while (running && activeMsg.repostCount < numReposts) {
         var rstr = repostContent + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + originContent;
