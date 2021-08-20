@@ -2,6 +2,11 @@ const weiboDataModes = {
     'spCheckIn': 'https://weibo.com/p/100808175a4d8afcf16ea86372c0aa24aa8ab3/super_index',
     'reading': 'https://weibo.com/xevier?profile_ftype=1&is_all=1',
     'amanComment': 'https://weibo.com/p/100808175a4d8afcf16ea86372c0aa24aa8ab3/super_index',
+    'spZnl': 'https://weibo.com/p/100808cd19f50b7e758a497f78651157aecdc5/super_index',
+    'mpZnl': 'https://weibo.com'
+}
+
+var AmanDataModes = {
     'searching': 'https://s.weibo.com/weibo/%25E4%25BC%25AF%25E8%25BF%259C?topnav=1&wvr=6&b=1&sudaref=weibo.com',
     'searchingList': [
         'https://www.baidu.com/s?ie=utf-8&f=3&rsv_bp=1&rsv_idx=1&tn=baidu&wd=%E4%BC%AF%E8%BF%9C&fenlei=256&rsv_pq=a3bdb76700033318&rsv_t=be79xcZjn3AVLzTsc71MgrLyu5Pd6V6I7FeKgb5tftn7aMp8C%2Fqsytvr9K8&rqlang=cn&rsv_enter=1&rsv_dl=ih_0&rsv_sug3=1&rsv_sug1=1&rsv_sug7=001&rsv_sug2=1&rsv_btype=i&rsp=0&rsv_sug9=es_2_1&rsv_sug4=1265&rsv_sug=1',
@@ -12,10 +17,11 @@ const weiboDataModes = {
         'https://so.youku.com/search_video/q_%E4%BC%AF%E8%BF%9C?searchfrom=1',
         'https://search.bilibili.com/all?keyword=%E4%BC%AF%E8%BF%9C&from_source=web_search'
     ],
-    'spZnl': 'https://weibo.com/p/100808cd19f50b7e758a497f78651157aecdc5/super_index',
-    'mpZnl': 'https://weibo.com'
-    // 'wq': 'https://weibo.com'
+    'bdComment': 'https://tieba.baidu.com/f?ie=utf-8&kw=%E4%BC%AF%E8%BF%9Cxevier',
+    'bd': 'https://tieba.baidu.com/f?ie=utf-8&kw=%E4%BC%AF%E8%BF%9Cxevier',
+    'bdBuilding': ''
 }
+
 var activeMode = 'spCheckIn';
 var activeControl = 'weiboData';
 var activeState = 'ready';
@@ -52,23 +58,27 @@ window.onload = function () {
             sendResponse(activeMsg);
         } else if (msg['from'] == 'content' && msg['type'] == 'finishedSpCheckIn') {
             if (activeInput['reading']) {
-                startSendingWeiboData('reading');
+                startSendingData('reading');
             } else if (activeInput['amanComment']) {
-                startSendingWeiboData('amanComment');
-            } else if (activeInput['searching']) {
-                startSendingWeiboData('searching');
+                startSendingData('amanComment');
             } else if (activeInput['spZnlInput'] > 0) {
-                startSendingWeiboData('spZnl');
+                startSendingData('spZnl');
             } else if (activeInput['mpZnlInput'] > 0) {
-                startSendingWeiboData('mpZnl');
-            // } else if (activeInput['wqInput'] > 0) {
-            //     startSendingWeiboData('wq');
+                startSendingData('mpZnl');
             } else if (activeInput['zpzControl']) {
                 startSendingZpz().then((result) => {
                     if (!result.isSuccess) {
                         finishSending(result.msg)
                     }
                 })
+            } else if (activeInput['amanControl']) {
+                if (activeInput['searching']) {
+                    startSendingData('searching');
+                } else if (activeInput['bdComment']) {
+                    startSendingData('bdComment');
+                } else if (activeInput['bdInput'] > 0) {
+                    startSendingData('bd');
+                }
             } else {
                 finishSending('');
             }
@@ -79,104 +89,127 @@ window.onload = function () {
                 if (activeState === 'running') {
                     console.log('finished reading, continue other tasks.');
                     if (activeInput['amanComment']) {
-                        startSendingWeiboData('amanComment');
-                    } else if (activeInput['searching']) {
-                        startSendingWeiboData('searching');
+                        startSendingData('amanComment');
                     } else if (activeInput['spZnlInput'] > 0) {
-                        startSendingWeiboData('spZnl');
+                        startSendingData('spZnl');
                     } else if (activeInput['mpZnlInput'] > 0) {
-                        startSendingWeiboData('mpZnl');
-                    // } else if (activeInput['wqInput'] > 0) {
-                    //     startSendingWeiboData('wq');
+                        startSendingData('mpZnl');
                     } else if (activeInput['zpzControl']) {
                         startSendingZpz().then((result) => {
                             if (!result.isSuccess) {
                                 finishSending(result.msg)
                             }
                         })
+                    } else if (activeInput['amanControl']) {
+                        if (activeInput['searching']) {
+                            startSendingData('searching');
+                        } else if (activeInput['bdComment']) {
+                            startSendingData('bdComment');
+                        } else if (activeInput['bdInput'] > 0) {
+                            startSendingData('bd');
+                        }
                     } else {
                         finishSending('');
                     }
                 }
             });
         } else if (msg['from'] == 'content' && msg['type'] == 'finishedAmanComment') {
-            if (activeInput['searching']) {
-                startSendingWeiboData('searching');
-            } else if (activeInput['spZnlInput'] > 0) {
-                startSendingWeiboData('spZnl');
+            if (activeInput['spZnlInput'] > 0) {
+                startSendingData('spZnl');
             } else if (activeInput['mpZnlInput'] > 0) {
-                startSendingWeiboData('mpZnl');
-            // } else if (activeInput['wqInput'] > 0) {
-            //     startSendingWeiboData('wq');
+                startSendingData('mpZnl');
             } else if (activeInput['zpzControl']) {
                 startSendingZpz().then((result) => {
                     if (!result.isSuccess) {
                         finishSending(result.msg)
                     }
                 })
+            } else if (activeInput['amanControl']) {
+                if (activeInput['searching']) {
+                    startSendingData('searching');
+                } else if (activeInput['bdComment']) {
+                    startSendingData('bdComment');
+                } else if (activeInput['bdInput'] > 0) {
+                    startSendingData('bd');
+                }
             } else {
                 finishSending('');
             }
-        } else if (msg['from'] == 'content' && msg['type'] == 'finishedSearching') {
-            startReadSearch(weiboDataModes['searchingList']).then((result) => {
-                activeMsg.searchingStatus = result;
-                setReadSearchState();
-                if (activeState === 'running') {
-                    console.log('finished reading, continue other tasks.');
-                    if (activeInput['spZnlInput'] > 0) {
-                        startSendingWeiboData('spZnl');
-                    } else if (activeInput['mpZnlInput'] > 0) {
-                        startSendingWeiboData('mpZnl');
-                    // } else if (activeInput['wqInput'] > 0) {
-                    //     startSendingWeiboData('wq');
-                    } else if (activeInput['zpzControl']) {
-                        startSendingZpz().then((result) => {
-                            if (!result.isSuccess) {
-                                finishSending(result.msg)
-                            }
-                        })
-                    } else {
-                        finishSending('');
-                    }
-                }
-            });
         } else if (msg['from'] == 'content' && msg['type'] == 'finishedSpZnl') {
             if (activeInput['mpZnlInput'] > 0) {
-                startSendingWeiboData('mpZnl');
-            // } else if (activeInput['wqInput'] > 0) {
-            //     startSendingWeiboData('wq');
+                startSendingData('mpZnl');
             } else if (activeInput['zpzControl']) {
                 startSendingZpz().then((result) => {
                     if (!result.isSuccess) {
                         finishSending(result.msg)
                     }
                 })
+            } else if (activeInput['amanControl']) {
+                if (activeInput['searching']) {
+                    startSendingData('searching');
+                } else if (activeInput['bdComment']) {
+                    startSendingData('bdComment');
+                } else if (activeInput['bdInput'] > 0) {
+                    startSendingData('bd');
+                }
             } else {
                 finishSending('');
             }
         } else if (msg['from'] == 'content' && msg['type'] == 'finishedMpZnl') {
-        //     if (activeInput['wqInput'] > 0) {
-        //         startSendingWeiboData('wq');
-        //     } else if (activeInput['zpzControl']) {
-        //         startSendingZpz().then((result) => {
-        //             if (!result.isSuccess) {
-        //                 finishSending(result.msg)
-        //             }
-        //         })
-        //     } else {
-        //         finishSending('');
-        //     }
-        // } else if (msg['from'] == 'content' && msg['type'] == 'finishedWq') {
             if (activeInput['zpzControl']) {
                 startSendingZpz().then((result) => {
                     if (!result.isSuccess) {
                         finishSending(result.msg)
                     }
                 });
+            } else if (activeInput['amanControl']) {
+                if (activeInput['searching']) {
+                    startSendingData('searching');
+                } else if (activeInput['bdComment']) {
+                    startSendingData('bdComment');
+                } else if (activeInput['bdInput'] > 0) {
+                    startSendingData('bd');
+                }
             } else {
                 finishSending('');
             }
         } else if (msg['from'] == 'content' && msg['type'] == 'finishedZpz') {
+            if (activeInput['amanControl']) {
+                if (activeInput['searching']) {
+                    startSendingData('searching');
+                } else if (activeInput['bdComment']) {
+                    startSendingData('bdComment');
+                } else if (activeInput['bdInput'] > 0) {
+                    startSendingData('bd');
+                }
+            } else {
+                finishSending('');
+            }
+        } else if (msg['from'] == 'content' && msg['type'] == 'finishedSearching') {
+            startReadSearch(AmanDataModes['searchingList']).then((result) => {
+                activeMsg.searchingStatus = result;
+                setReadSearchState();
+                if (activeState === 'running') {
+                    console.log('finished reading, continue other tasks.');
+                    if (activeInput['bdComment']) {
+                        startSendingData('bdComment');
+                    } else if (activeInput['bdInput'] > 0) {
+                        startSendingData('bd');
+                    } else {
+                        finishSending('');
+                    }
+                }
+            });
+        } else if (msg['from'] == 'content' && msg['type'] == 'finishedGetBdBuilding') {
+            AmanDataModes['bdBuilding'] = msg['bdBuilding'];
+            startSendingData('bdBuilding');
+        } else if (msg['from'] == 'content' && msg['type'] == 'finishedBdComment') {
+            if (activeInput['bdInput'] > 0) {
+                startSendingData('bd');
+            } else {
+                finishSending('');
+            }
+        } else if (msg['from'] == 'content' && msg['type'] == 'finishedBd') {
             finishSending('');
         } else if (msg['from'] == 'content' && msg['type'] == 'state') {
             activeMsg = msg['activeMsg'];
@@ -316,7 +349,7 @@ function startSendingZpz() {
     });
 }
 
-function sendingWeiboData(type, resolve) {
+function sendingData(type, resolve) {
     setTimeout(() => {
         var result = { isSuccess: false, msg: '' };
         if (activeState !== 'finished') {
@@ -327,14 +360,15 @@ function sendingWeiboData(type, resolve) {
                     'spCheckIn': activeInput['spCheckIn'],
                     'amanComment': activeInput['amanComment'],
                     'reading': activeInput['reading'],
-                    'searching': activeInput['searching'],
                     'spZnlInput': activeInput['spZnlInput'],
                     'wbContent': activeInput['wbContent'],
                     'mpZnlInput': activeInput['mpZnlInput'],
                     'mpZnlTag': activeInput['mpZnlTag'],
-                    // 'wqInput': activeInput['wqInput'],
                     'wqTag': activeInput['wqTag'],
-                    'activeMsg': activeMsg
+                    'searching': activeInput['searching'],
+                    'bdComment': activeInput['bdComment'],
+                    'bdInput': activeInput['bdInput'],
+                    'activeMsg': activeMsg,
                 }, function (msg) {
                     console.log(msg);
                     activeState = 'running';
@@ -349,17 +383,23 @@ function sendingWeiboData(type, resolve) {
     }, 2000);
 }
 
-function startSendingWeiboData(type) {
+function startSendingData(type) {
     return new Promise(resolve => {
         var result = { isSuccess: false, msg: '' };
-        const url = weiboDataModes[type];
-        activeControl = 'weiboData';
+        var url = '';
+        if (weiboDataModes.hasOwnProperty(type)) {
+            url = weiboDataModes[type];
+            activeControl = 'weiboData';
+        } else {
+            url = AmanDataModes[type];
+            activeControl = 'amanData';
+        }
         activeMode = type;
         try {
             //navigate to supertopic
             chrome.tabs.get(activeTab, function (tab) {
                 if (tab.url == url) {
-                    sendingWeiboData(type, resolve);
+                    sendingData(type, resolve);
                 } else {
                     try {
                         chrome.tabs.update(activeTab, { url: url }, function () {
@@ -367,7 +407,7 @@ function startSendingWeiboData(type) {
                                 if (activeTab && tabId === activeTab && changeInfo.status == 'complete' && activeMode == type) {
                                     console.log('sending ' + type);
                                     chrome.tabs.onUpdated.removeListener(listener);
-                                    sendingWeiboData(type, resolve);
+                                    sendingData(type, resolve);
                                 }
                             });
                         });
@@ -392,22 +432,26 @@ async function startSending() {
     } else {
         if (activeInput['weiboDataControl']) {
             if (activeInput['spCheckIn']) {
-                result = await startSendingWeiboData('spCheckIn');
+                result = await startSendingData('spCheckIn');
             } else if (activeInput['reading']) {
-                result = await startSendingWeiboData('reading');
+                result = await startSendingData('reading');
             } else if (activeInput['amanComment']) {
-                result = await startSendingWeiboData('amanComment');
-            } else if (activeInput['searching']) {
-                result = await startSendingWeiboData('searching');
+                result = await startSendingData('amanComment');
             } else if (activeInput['spZnlInput'] > 0) {
-                result = await startSendingWeiboData('spZnl');
+                result = await startSendingData('spZnl');
             } else if (activeInput['mpZnlInput'] > 0) {
-                result = await startSendingWeiboData('mpZnl');
-            // } else if (activeInput['wqInput'] > 0) {
-            //     result = await startSendingWeiboData('wq');
+                result = await startSendingData('mpZnl');
             }
-        } else {
+        } else if (activeInput['zpzControl']) {
             result = await startSendingZpz();
+        } else if (activeInput['amanControl']) {
+            if (activeInput['searching']) {
+                result = await startSendingData('searching');
+            } else if (activeInput['bdComment']) {
+                result = await startSendingData('bdComment');
+            } else if (activeInput['bdInput'] > 0) {
+                result = await startSendingData('bd');
+            }
         }
     }
     return result;
