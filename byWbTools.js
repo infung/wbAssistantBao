@@ -6,20 +6,21 @@ var activeMsg = {
     spCheckInStatus: false,
     amanCommentStatus: false,
     readingStatus: false,
-    searchingStatus: false,
     spZnlCount: 0,
     mpZnlCount: 0,
-    // wqCount: 0,
     spZnlMsg: '',
     mpZnlMsg: '',
-    // wqMsg: '',
     likeCount: 0,
     commentCount: 0,
     repostCount: 0,
     likeMsg: '',
     commentMsg: '',
     repostMsg: '',
-    likeOriginStatus: ''
+    likeOriginStatus: '',
+    searchingStatus: false,
+    bdCommentStatus: false,
+    bdCount: 0,
+    bdMsg: '',
 }
 
 var running = false;
@@ -43,11 +44,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         setPriorState(msg['activeMsg']);
         reading();
         sendResponse('weiboData reading start sending');
-    } else if (msg['from'] == 'background' && msg['type'] == 'searching') {
-        running = true;
-        setPriorState(msg['activeMsg']);
-        searching();
-        sendResponse('weiboData searching start sending');
     } else if (msg['from'] == 'background' && msg['type'] == 'spZnl') {
         running = true;
         setPriorState(msg['activeMsg']);
@@ -58,11 +54,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         setPriorState(msg['activeMsg']);
         mpZnl(msg['wbContent'], msg['mpZnlInput'], msg['mpZnlTag'], msg['wqTag']);
         sendResponse('weiboData mpZnl start sending');
-    // } else if (msg['from'] == 'background' && msg['type'] == 'wq') {
-    //     running = true;
-    //     setPriorState(msg['activeMsg']);
-    //     wq(msg['wqInput'], msg['wqTag']);
-    //     sendResponse('weiboData wq start sending');
     } else if (msg["from"] == 'background' && msg["type"] == "allForBY") {
         checkBoYuanOnly().then(sendResponse);
         return true;
@@ -71,6 +62,26 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         setPriorState(msg['activeMsg']);
         zpz(msg["repostInput"], msg["commentInput"], msg["likeInput"], msg["repostContent"], msg["commentContent"], msg["likeOrigin"]);
         sendResponse('zpz start sending');
+    } else if (msg['from'] == 'background' && msg['type'] == 'searching') {
+        running = true;
+        setPriorState(msg['activeMsg']);
+        searching();
+        sendResponse('amanData searching start sending');
+    } else if (msg['from'] == 'background' && msg['type'] == 'bdComment') {
+        running = true;
+        setPriorState(msg['activeMsg']);
+        getBdBuilding();
+        sendResponse('weiboData bdComment start sending');
+    } else if (msg['from'] == 'background' && msg['type'] == 'bdBuilding') {
+        running = true;
+        setPriorState(msg['activeMsg']);
+        bdComment();
+        sendResponse('weiboData bdBuilding start sending');
+    } else if (msg['from'] == 'background' && msg['type'] == 'bd') {
+        running = true;
+        setPriorState(msg['activeMsg']);
+        bd(msg["bdInput"]);
+        sendResponse('weiboData bd start sending');
     } else if (msg["from"] == 'background' && msg["type"] == "stopSending") {
         running = false;
         sendResponse('stop sending');
@@ -80,6 +91,40 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// ***********************testing functions for interation***********************************************************************
+
+async function bdComment() {
+    console.log('start bd commenting');
+    await sleep(5000);
+    console.log("commented!");
+    activeMsg.bdCommentStatus = true;
+    sendState();
+    if (!running) {
+        console.log('stop due to [stop button]');
+    } else {
+        running = false;
+        console.log('stop due to [finished]');
+        chrome.runtime.sendMessage({ "type": "finishedBdComment", "from": "content" });
+    }
+}
+
+async function bd(numBdPost) {
+    console.log('start bd posting');
+    await sleep(5000);
+    console.log("posted!");
+    activeMsg.bdCount++;
+    activeMsg.bdMsg = numBdPost;
+    sendState();
+    if (!running) {
+        console.log('stop due to [stop button]');
+    } else {
+        running = false;
+        console.log('stop due to [finished]');
+        chrome.runtime.sendMessage({ "type": "finishedBd", "from": "content" });
+    }
+}
+// ********************************************************************************************************************************
 
 function getElementsByXPath(xpathToExecute) {
     return document.evaluate(xpathToExecute, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -605,34 +650,6 @@ async function mpZnl(wbContent, numMpZnl, mpZnlTag, wqTag) {
     }, 3000);
 }
 
-// async function wq(numWq, wqTag) {
-//     //const url = chrome.runtime.getURL('content.json');
-//     //const contentJson = await (await fetch(url)).json();
-
-//     const interval = setInterval(async () => {
-//         var wqstr = wqGenerator(wqTag);
-//         var wqResponse = await postWeibo(wqstr, true);
-//         if (wqResponse.code === '100000') {
-//             activeMsg.wqCount++;
-//             wqResponse.msg = '';
-//         }
-//         activeMsg.wqMsg = wqResponse.msg;
-//         sendState();
-//         if (!running || activeMsg.wqCount === numWq || wqResponse.code !== '100000') {
-//             clearInterval(interval);
-//             await sleep(1000);
-//             if (!running) {
-//                 console.log('stop due to [stop button]');
-//             } else {
-//                 running = false;
-//                 console.log('stop due to [finished]');
-//                 chrome.runtime.sendMessage({ "type": "finishedWq", "from": "content" });
-//             }
-//             //activeMsg.wqCount = 0;
-//         }
-//     }, 3000);
-// }
-// 
 function searching() {
     var notChangedStepsCount = 0;
     var scrolldelay = setInterval(function () {
@@ -822,5 +839,17 @@ async function amanComment() {
         running = false;
         console.log('stop due to [finished]');
         chrome.runtime.sendMessage({ "type": "finishedAmanComment", "from": "content" });
+    }
+}
+
+async function getBdBuilding() {
+    await waitElementPresent('//ul[@id="thread_top_list"]');
+    var buildingUrl = document.getElementById("thread_top_list").getElementsByClassName('j_th_tit')[1].href;
+    if (!running) {
+        console.log('stop due to [stop button]');
+    } else {
+        running = false;
+        console.log('stop due to [finished]');
+        chrome.runtime.sendMessage({ "type": "finishedGetBdBuilding", "from": "content", "bdBuilding": buildingUrl });
     }
 }

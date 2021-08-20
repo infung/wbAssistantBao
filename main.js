@@ -39,29 +39,27 @@ $(function () {
         var spCheckInSofar = false;
         var amanCommentSofar = false;
         var readingSofar = false;
-        var searchingSofar = false;
         var spZnlSofar = '';
         var mpZnlSofar = '';
-        //var wqSofar = '';
 
         var repostSofar = '';
         var commentSofar = '';
         var likeSofar = '';
 
+        var searchingSofar = false;
+        var bdCommentSofar = false;
+        var bdSofar = '';
+
         if (!jQuery.isEmptyObject(msg)) {
             if (msg['spCheckInStatus']) spCheckInSofar = true;
             if (msg['amanCommentStatus']) amanCommentSofar = true;
             if (msg['readingStatus']) readingSofar = true;
-            if (msg['searchingStatus']) searchingSofar = true;
             if ((msg['spZnlCount'] != null && msg['spZnlCount'] > 0) || !!msg['spZnlMsg']) {
                 spZnlSofar = '已发送' + msg['spZnlCount'] + '条。' + msg['spZnlMsg'];
             }
             if ((msg['mpZnlCount'] != null && msg['mpZnlCount'] > 0) || !!msg['mpZnlMsg']) {
                 mpZnlSofar = '已发送' + msg['mpZnlCount'] + '条。' + msg['mpZnlMsg'];
             }
-            // if ((msg['wqCount'] != null && msg['wqCount'] > 0) || !!msg['wqMsg']) {
-            //     wqSofar = '已发送' + msg['wqCount'] + '条。' + msg['wqMsg'];
-            // }
 
             if ((msg['repostCount'] != null && msg['repostCount'] > 0) || !!msg['repostMsg']) {
                 repostSofar = '已转发' + msg['repostCount'] + '条。' + msg['repostMsg'];
@@ -71,6 +69,12 @@ $(function () {
             }
             if ((msg['likeCount'] != null && msg['likeCount'] > 0) || !!msg['likeMsg']) {
                 likeSofar = '已点赞' + msg['likeCount'] + '个。' + msg['likeMsg'];
+            }
+
+            if (msg['searchingStatus']) searchingSofar = true;
+            if (msg['bdCommentStatus']) bdCommentSofar = true;
+            if ((msg['bdCount'] != null && msg['bdCount'] > 0) || !!msg['bdMsg']) {
+                bdSofar = '已发帖' + msg['bdCount'] + '条。' + msg['bdCount'];
             }
         }
 
@@ -89,18 +93,26 @@ $(function () {
         } else {
             $('#readingStatus').hide();
         }
+
         if (searchingSofar) {
             $('#searchingStatus').show();
         } else {
             $('#searchingStatus').hide();
         }
+        if (bdCommentSofar) {
+            $('#bdCommentStatus').show();
+        } else {
+            $('#bdCommentStatus').hide();
+        }
+        
         $('#currentSpZnl').text(spZnlSofar);
         $('#currentMpZnl').text(mpZnlSofar);
-        //$('#currentWq').text(wqSofar);
 
         $('#currentRepost').text(repostSofar);
         $('#currentComment').text(commentSofar);
         $('#currentLike').text(likeSofar);
+
+        $('#currentBd').text(bdSofar);
     }
     setView = function (details) {
         if (details['weiboDataControl']) {
@@ -108,11 +120,15 @@ $(function () {
         } else {
             $('#weiboDataControl').prop('checked', false);
         }
-
         if (details['zpzControl']) {
             $('#zpzControl').prop('checked', true);
         } else {
             $('#zpzControl').prop('checked', false);
+        }
+        if (details['amanControl']) {
+            $('#amanControl').prop('checked', true);
+        } else {
+            $('#amanControl').prop('checked', false);
         }
 
         if (details['spCheckIn']) {
@@ -130,11 +146,6 @@ $(function () {
         } else {
             $('#reading').prop('checked', false);
         }
-        if (details['searching']) {
-            $('#searching').prop('checked', true);
-        } else {
-            $('#searching').prop('checked', false);
-        }
         $('#spZnlInput').val(details['spZnlInput']);
         if (details['wbContent'] === 'kuakua') {
             $('#kuakua').prop('checked', true);
@@ -149,7 +160,6 @@ $(function () {
         }
         $('#mpZnlInput').val(details['mpZnlInput']);
         $('#mpZnlTag').val(details['mpZnlTag']);
-        //$('#wqInput').val(details['wqInput']);
         $('#wqTag').val(details['wqTag']);
 
         $('#weiboUrl').val(details['weiboUrl']);
@@ -163,16 +173,28 @@ $(function () {
         } else {
             $('#likeOrigin').prop('checked', false);
         }
+
+        if (details['searching']) {
+            $('#searching').prop('checked', true);
+        } else {
+            $('#searching').prop('checked', false);
+        }
+        if (details['bdComment']) {
+            $('#bdComment').prop('checked', true);
+        } else {
+            $('#bdComment').prop('checked', false);
+        }
+        $('#bdInput').val(details['bdInput']);
     }
 
     setInput = function () {
         var weiboDataControl = $('#weiboDataControl').is(":checked");
         var zpzControl = $('#zpzControl').is(":checked");
+        var amanControl = $('#amanControl').is(":checked");
 
         var spCheckIn = $('#spCheckIn').is(":checked");
         var amanComment = $('#amanComment').is(":checked");
         var reading = $('#reading').is(":checked");
-        var searching = $('#searching').is(":checked");
         var spZnlInput = $('#spZnlInput').val();
         var wbContent = 'kuakua';
         if ($('#weiquan').is(":checked")) {
@@ -180,20 +202,15 @@ $(function () {
         }
         var mpZnlInput = $('#mpZnlInput').val();
         var mpZnlTag = $('#mpZnlTag').val();
-        //var wqInput = $('#wqInput').val();
         var wqTag = $('#wqTag').val();
-
         spZnlInput = spZnlInput - 0;
         mpZnlInput = mpZnlInput - 0;
-        //wqInput = wqInput - 0;
         if (spCheckIn == null) spCheckIn = true;
         if (amanComment == null) amanComment = true;
-        if (reading == null) reading = true;
-        if (searching == null) searching = true;
+        if (reading == null) reading = false;
         if (spZnlInput == null || isNaN(spZnlInput)) spZnlInput = 0;
         if (mpZnlInput == null || isNaN(mpZnlInput)) mpZnlInput = 0;
         if (mpZnlTag == null || !mpZnlTag) mpZnlTag = '';
-        //if (wqInput == null || isNaN(wqInput)) wqInput = 0;
         if (wqTag == null || !wqTag) wqTag = '';
 
         var weiboUrl = $('#weiboUrl').val();
@@ -214,21 +231,28 @@ $(function () {
         if (commentContent == null || !commentContent) commentContent = '';
         if (likeOrigin == null) likeOrigin = true;
 
+        var searching = $('#searching').is(":checked");
+        var bdComment = $('#bdComment').is(":checked");
+        var bdInput = $('#bdInput').val();
+        bdInput = bdInput - 0;
+        if (searching == null) searching = true;
+        if (bdComment == null) bdComment = false;
+        if (bdInput == null || isNaN(bdInput)) bdInput = 0;
+
         chrome.runtime.sendMessage(null, {
             'type': 'input',
             'from': 'popup',
             'activeInput': {
                 'weiboDataControl': weiboDataControl,
                 'zpzControl': zpzControl,
+                'amanControl': amanControl,
                 'spCheckIn': spCheckIn,
                 'amanComment': amanComment,
                 'reading': reading,
-                'searching': searching,
                 'spZnlInput': spZnlInput,
                 'wbContent': wbContent,
                 'mpZnlInput': mpZnlInput,
                 'mpZnlTag': mpZnlTag,
-                //'wqInput': wqInput,
                 'wqTag': wqTag,
                 'weiboUrl': weiboUrl,
                 'repostInput': repostInput,
@@ -236,7 +260,10 @@ $(function () {
                 'likeInput': likeInput,
                 'repostContent': repostContent,
                 'commentContent': commentContent,
-                'likeOrigin': likeOrigin
+                'likeOrigin': likeOrigin,
+                'searching': searching,
+                'bdComment': bdComment,
+                'bdInput': bdInput
             }
         }, null, function (msg) {
             if (!!msg) {
@@ -249,7 +276,8 @@ $(function () {
         console.log('send');
         var weiboDataControl = $('#weiboDataControl').is(":checked");
         var zpzControl = $('#zpzControl').is(":checked");
-        if (weiboDataControl || zpzControl) {
+        var amanControl = $('#amanControl').is(":checked");
+        if (weiboDataControl || zpzControl || amanControl) {
             chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                 disableInputs();
                 showStopbutton();
@@ -325,6 +353,10 @@ $(function () {
             $('a[href$="#zpz"]').removeClass('active');
             $('#zpz').addClass('fade');
             $('#zpz').removeClass('active');
+
+            $('a[href$="#amanData"]').removeClass('active');
+            $('#amanData').addClass('fade');
+            $('#amanData').removeClass('active');
         } else if (msg['activeControl'] === 'zpz') {
             $('a[href$="#zpz"]').addClass('active');
             $('#zpz').addClass('active');
@@ -333,6 +365,22 @@ $(function () {
             $('a[href$="#weiboData"]').removeClass('active');
             $('#weiboData').addClass('fade');
             $('#weiboData').removeClass('active');
+
+            $('a[href$="#amanData"]').removeClass('active');
+            $('#amanData').addClass('fade');
+            $('#amanData').removeClass('active');
+        } else if (msg['activeControl'] === 'amanData') {
+            $('a[href$="#amanData"]').addClass('active');
+            $('#amanData').addClass('active');
+            $('#amanData').removeClass('fade');
+
+            $('a[href$="#weiboData"]').removeClass('active');
+            $('#weiboData').addClass('fade');
+            $('#weiboData').removeClass('active');
+
+            $('a[href$="#zpz"]').removeClass('active');
+            $('#zpz').addClass('fade');
+            $('#zpz').removeClass('active');
         }
 
         if (!jQuery.isEmptyObject(msg['activeInput'])) {
