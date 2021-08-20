@@ -9,8 +9,10 @@ var activeMsg = {
     searchingStatus: false,
     spZnlCount: 0,
     mpZnlCount: 0,
+    // wqCount: 0,
     spZnlMsg: '',
     mpZnlMsg: '',
+    // wqMsg: '',
     likeCount: 0,
     commentCount: 0,
     repostCount: 0,
@@ -54,8 +56,13 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     } else if (msg['from'] == 'background' && msg['type'] == 'mpZnl') {
         running = true;
         setPriorState(msg['activeMsg']);
-        mpZnl(msg['mpZnlInput'], msg['mpZnlTag']);
+        mpZnl(msg['wbContent'], msg['mpZnlInput'], msg['mpZnlTag'], msg['wqTag']);
         sendResponse('weiboData mpZnl start sending');
+    // } else if (msg['from'] == 'background' && msg['type'] == 'wq') {
+    //     running = true;
+    //     setPriorState(msg['activeMsg']);
+    //     wq(msg['wqInput'], msg['wqTag']);
+    //     sendResponse('weiboData wq start sending');
     } else if (msg["from"] == 'background' && msg["type"] == "allForBY") {
         checkBoYuanOnly().then(sendResponse);
         return true;
@@ -528,6 +535,15 @@ function kkGenerator(tag) {
     return str;
 }
 
+function wqGenerator(tag) {
+    var str = randomRange(4, 8);
+    str = tag + '\n' + WEIQUAN[Math.floor(Math.random() * WEIQUAN.length)] + '❗️'.repeat(Math.floor(Math.random() * 10)) + 
+        '\n' + '❌'.repeat(Math.floor(Math.random() * 10)) + WEIQUANEND[Math.floor(Math.random() * WEIQUANEND.length)] + 
+        '❗️'.repeat(Math.floor(Math.random() * 10)) + '💢'.repeat(Math.floor(Math.random() * 10)) + 
+        '\n' + str + ' test iPad 养乐多';
+    return str;
+}
+
 async function spZnl(numSpZnl) {
     //const url = chrome.runtime.getURL('content.json');
     //const contentJson = await (await fetch(url)).json();
@@ -556,20 +572,25 @@ async function spZnl(numSpZnl) {
     }, 3000);
 }
 
-async function mpZnl(numMpZnl, mpZnlTag) {
+async function mpZnl(wbContent, numMpZnl, mpZnlTag, wqTag) {
     //const url = chrome.runtime.getURL('content.json');
     //const contentJson = await (await fetch(url)).json();
 
     const interval = setInterval(async () => {
-        var kkstr = kkGenerator(mpZnlTag);
-        var kkResponse = await postWeibo(kkstr, true);
-        if (kkResponse.code === '100000') {
-            activeMsg.mpZnlCount++;
-            kkResponse.msg = '';
+        var str = '';
+        if (wbContent === 'weiquan') {
+            str = wqGenerator(wqTag);
+        } else {
+            str = kkGenerator(mpZnlTag);
         }
-        activeMsg.mpZnlMsg = kkResponse.msg;
+        var response = await postWeibo(str, true);
+        if (response.code === '100000') {
+            activeMsg.mpZnlCount++;
+            response.msg = '';
+        }
+        activeMsg.mpZnlMsg = response.msg;
         sendState();
-        if (!running || activeMsg.mpZnlCount === numMpZnl || kkResponse.code !== '100000') {
+        if (!running || activeMsg.mpZnlCount === numMpZnl || response.code !== '100000') {
             clearInterval(interval);
             await sleep(1000);
             if (!running) {
@@ -584,6 +605,34 @@ async function mpZnl(numMpZnl, mpZnlTag) {
     }, 3000);
 }
 
+// async function wq(numWq, wqTag) {
+//     //const url = chrome.runtime.getURL('content.json');
+//     //const contentJson = await (await fetch(url)).json();
+
+//     const interval = setInterval(async () => {
+//         var wqstr = wqGenerator(wqTag);
+//         var wqResponse = await postWeibo(wqstr, true);
+//         if (wqResponse.code === '100000') {
+//             activeMsg.wqCount++;
+//             wqResponse.msg = '';
+//         }
+//         activeMsg.wqMsg = wqResponse.msg;
+//         sendState();
+//         if (!running || activeMsg.wqCount === numWq || wqResponse.code !== '100000') {
+//             clearInterval(interval);
+//             await sleep(1000);
+//             if (!running) {
+//                 console.log('stop due to [stop button]');
+//             } else {
+//                 running = false;
+//                 console.log('stop due to [finished]');
+//                 chrome.runtime.sendMessage({ "type": "finishedWq", "from": "content" });
+//             }
+//             //activeMsg.wqCount = 0;
+//         }
+//     }, 3000);
+// }
+// 
 function searching() {
     var notChangedStepsCount = 0;
     var scrolldelay = setInterval(function () {

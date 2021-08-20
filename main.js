@@ -1,81 +1,48 @@
-$(function() {
+$(function () {
     /*chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
         if (!tab.url.includes('weibo.com')) {
             disableButtons();
         }
     });*/
-    showSendbutton = function() {
+    showSendbutton = function () {
         $('#sendbutton').show();
         $('#stopbutton').hide();
         $('#okbutton').hide();
     };
-    showStopbutton = function() {
+    showStopbutton = function () {
         $('#stopbutton').show();
         $('#sendbutton').hide();
         $('#okbutton').hide();
     };
-    showOkbutton = function() {
+    showOkbutton = function () {
         $('#okbutton').show();
         $('#sendbutton').hide();
         $('#stopbutton').hide();
     };
-    /*disableButtons = function() {
-        $('#sendbutton').prop('disabled', true);
-        $('#stopbutton').prop('disabled', true);
-        $('#okbutton').prop('disabled', true);
+    disableInputs = function () {
+        $("input").each(function () {
+            $(this).attr('disabled', 'disabled');
+        });
+        $("textarea").each(function () {
+            $(this).attr('disabled', 'disabled');
+        });
     };
-    enableButtons = function() {
-        $('#sendbutton').prop('disabled', false);
-        $('#stopbutton').prop('disabled', false);
-        $('#okbutton').prop('disabled', false);
-    };*/
-    disableInputs = function() {
-        $('#weiboDataControl').attr('disabled', 'disabled');
-        $('#zpzControl').attr('disabled', 'disabled');
-
-        $('#spCheckIn').attr('disabled', 'disabled');
-        $('#amanComment').attr('disabled', 'disabled');
-        $('#reading').attr('disabled', 'disabled');
-        $('#searching').attr('disabled', 'disabled');
-        $('#spZnlInput').attr('disabled', 'disabled');
-        $('#mpZnlInput').attr('disabled', 'disabled');
-        $('#mpZnlTag').attr('disabled', 'disabled');
-
-        $('#weiboUrl').attr('disabled', 'disabled');
-        $('#repostInput').attr('disabled', 'disabled');
-        $('#repostContent').attr('disabled', 'disabled');
-        $('#commentInput').attr('disabled', 'disabled');
-        $('#commentContent').attr('disabled', 'disabled');
-        $('#likeInput').attr('disabled', 'disabled');
-        $('#likeOrigin').attr('disabled', 'disabled');
-    };
-    enableInputs = function() {
-        $('#weiboDataControl').removeAttr('disabled');
-        $('#zpzControl').removeAttr('disabled');
-
-        $('#spCheckIn').removeAttr('disabled');
-        $('#amanComment').removeAttr('disabled');
-        $('#reading').removeAttr('disabled');
-        $('#searching').removeAttr('disabled');
-        $('#spZnlInput').removeAttr('disabled');
-        $('#mpZnlInput').removeAttr('disabled');
-        $('#mpZnlTag').removeAttr('disabled');
-
-        $('#weiboUrl').removeAttr('disabled');
-        $('#repostInput').removeAttr('disabled');
-        $('#repostContent').removeAttr('disabled');
-        $('#commentInput').removeAttr('disabled');
-        $('#commentContent').removeAttr('disabled');
-        $('#likeInput').removeAttr('disabled');
-        $('#likeOrigin').removeAttr('disabled');
+    enableInputs = function () {
+        $("input").each(function () {
+            $(this).removeAttr('disabled');
+        });
+        $("textarea").each(function () {
+            $(this).removeAttr('disabled');
+        });
     }
-    setState = function(msg) {
+    setState = function (msg) {
         var spCheckInSofar = false;
         var amanCommentSofar = false;
         var readingSofar = false;
         var searchingSofar = false;
         var spZnlSofar = '';
         var mpZnlSofar = '';
+        //var wqSofar = '';
 
         var repostSofar = '';
         var commentSofar = '';
@@ -92,6 +59,9 @@ $(function() {
             if ((msg['mpZnlCount'] != null && msg['mpZnlCount'] > 0) || !!msg['mpZnlMsg']) {
                 mpZnlSofar = '已发送' + msg['mpZnlCount'] + '条。' + msg['mpZnlMsg'];
             }
+            // if ((msg['wqCount'] != null && msg['wqCount'] > 0) || !!msg['wqMsg']) {
+            //     wqSofar = '已发送' + msg['wqCount'] + '条。' + msg['wqMsg'];
+            // }
 
             if ((msg['repostCount'] != null && msg['repostCount'] > 0) || !!msg['repostMsg']) {
                 repostSofar = '已转发' + msg['repostCount'] + '条。' + msg['repostMsg'];
@@ -126,12 +96,13 @@ $(function() {
         }
         $('#currentSpZnl').text(spZnlSofar);
         $('#currentMpZnl').text(mpZnlSofar);
+        //$('#currentWq').text(wqSofar);
 
         $('#currentRepost').text(repostSofar);
         $('#currentComment').text(commentSofar);
         $('#currentLike').text(likeSofar);
     }
-    setView = function(details) {
+    setView = function (details) {
         if (details['weiboDataControl']) {
             $('#weiboDataControl').prop('checked', true);
         } else {
@@ -165,8 +136,21 @@ $(function() {
             $('#searching').prop('checked', false);
         }
         $('#spZnlInput').val(details['spZnlInput']);
+        if (details['wbContent'] === 'kuakua') {
+            $('#kuakua').prop('checked', true);
+            $('#weiquan').prop('checked', false);
+            $('#wqTag').hide();
+            $('#mpZnlTag').show();
+        } else if (details['wbContent'] === 'weiquan') {
+            $('#weiquan').prop('checked', true);
+            $('#kuakua').prop('checked', false);
+            $('#mpZnlTag').hide();
+            $('#wqTag').show();
+        }
         $('#mpZnlInput').val(details['mpZnlInput']);
         $('#mpZnlTag').val(details['mpZnlTag']);
+        //$('#wqInput').val(details['wqInput']);
+        $('#wqTag').val(details['wqTag']);
 
         $('#weiboUrl').val(details['weiboUrl']);
         $('#repostInput').val(details['repostInput']);
@@ -181,7 +165,7 @@ $(function() {
         }
     }
 
-    setInput = function() {
+    setInput = function () {
         var weiboDataControl = $('#weiboDataControl').is(":checked");
         var zpzControl = $('#zpzControl').is(":checked");
 
@@ -190,11 +174,18 @@ $(function() {
         var reading = $('#reading').is(":checked");
         var searching = $('#searching').is(":checked");
         var spZnlInput = $('#spZnlInput').val();
+        var wbContent = 'kuakua';
+        if ($('#weiquan').is(":checked")) {
+            wbContent = 'weiquan';
+        }
         var mpZnlInput = $('#mpZnlInput').val();
         var mpZnlTag = $('#mpZnlTag').val();
+        //var wqInput = $('#wqInput').val();
+        var wqTag = $('#wqTag').val();
 
         spZnlInput = spZnlInput - 0;
         mpZnlInput = mpZnlInput - 0;
+        //wqInput = wqInput - 0;
         if (spCheckIn == null) spCheckIn = true;
         if (amanComment == null) amanComment = true;
         if (reading == null) reading = true;
@@ -202,6 +193,8 @@ $(function() {
         if (spZnlInput == null || isNaN(spZnlInput)) spZnlInput = 0;
         if (mpZnlInput == null || isNaN(mpZnlInput)) mpZnlInput = 0;
         if (mpZnlTag == null || !mpZnlTag) mpZnlTag = '';
+        //if (wqInput == null || isNaN(wqInput)) wqInput = 0;
+        if (wqTag == null || !wqTag) wqTag = '';
 
         var weiboUrl = $('#weiboUrl').val();
         var repostInput = $('#repostInput').val();
@@ -232,8 +225,11 @@ $(function() {
                 'reading': reading,
                 'searching': searching,
                 'spZnlInput': spZnlInput,
+                'wbContent': wbContent,
                 'mpZnlInput': mpZnlInput,
                 'mpZnlTag': mpZnlTag,
+                //'wqInput': wqInput,
+                'wqTag': wqTag,
                 'weiboUrl': weiboUrl,
                 'repostInput': repostInput,
                 'commentInput': commentInput,
@@ -242,26 +238,26 @@ $(function() {
                 'commentContent': commentContent,
                 'likeOrigin': likeOrigin
             }
-        }, null, function(msg) {
+        }, null, function (msg) {
             if (!!msg) {
                 console.log(msg);
             }
         });
     }
 
-    sendbuttonToggle = function() {
+    sendbuttonToggle = function () {
         console.log('send');
         var weiboDataControl = $('#weiboDataControl').is(":checked");
         var zpzControl = $('#zpzControl').is(":checked");
         if (weiboDataControl || zpzControl) {
-            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                 disableInputs();
                 showStopbutton();
                 chrome.runtime.sendMessage(null, {
                     'type': 'start',
                     'from': 'popup',
                     'tabId': tabs[0]["id"],
-                }, null, function(result) {
+                }, null, function (result) {
                     if (!result.isSuccess) {
                         showOkbutton();
                     }
@@ -273,18 +269,18 @@ $(function() {
         }
     }
 
-    stopbuttonToggle = function() {
+    stopbuttonToggle = function () {
         console.log('stop');
-        chrome.runtime.sendMessage(null, { 'type': 'stop', 'from': 'popup' }, null, function(result) {
+        chrome.runtime.sendMessage(null, { 'type': 'stop', 'from': 'popup' }, null, function (result) {
             if (result) {
                 showOkbutton();
             }
         });
     }
 
-    okbuttonToggle = function() {
+    okbuttonToggle = function () {
         console.log('ok');
-        chrome.runtime.sendMessage(null, { 'type': 'reset', 'from': 'popup' }, null, function(msg) {
+        chrome.runtime.sendMessage(null, { 'type': 'reset', 'from': 'popup' }, null, function (msg) {
             console.log('ok response from background: ' + JSON.stringify(msg));
             setState(msg);
             enableInputs();
@@ -293,7 +289,7 @@ $(function() {
     }
 
     //setupViewListener
-    chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+    chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         if (msg['from'] == 'content' && msg['type'] == 'state') {
             console.log('state message received from content');
             setState(msg['activeMsg']);
@@ -309,7 +305,7 @@ $(function() {
         }
     });
     //requestView
-    chrome.runtime.sendMessage(null, { 'type': 'view', 'from': 'popup' }, null, function(msg) {
+    chrome.runtime.sendMessage(null, { 'type': 'view', 'from': 'popup' }, null, function (msg) {
         console.log('requestView: ' + JSON.stringify(msg));
         if (msg['activeState'] == 'running') {
             disableInputs();
@@ -347,23 +343,33 @@ $(function() {
         }
     });
 
-    $('#sendbutton').on('click', function() {
+    $('#sendbutton').on('click', function () {
         sendbuttonToggle();
     });
 
-    $('#stopbutton').on('click', function() {
+    $('#stopbutton').on('click', function () {
         stopbuttonToggle();
     });
 
-    $('#okbutton').on('click', function() {
+    $('#okbutton').on('click', function () {
         okbuttonToggle();
     });
 
-    $('input').on('change', function() {
+    $('input').on('change', function () {
         setInput();
     });
 
-    $('textarea').on('change', function() {
+    $('textarea').on('change', function () {
         setInput();
+    });
+
+    $("input[name='wbContent']").on('click', function () {
+        if (this.value === 'weiquan') {
+            $('#mpZnlTag').hide();
+            $('#wqTag').show();
+        } else {
+            $('#wqTag').hide();
+            $('#mpZnlTag').show();
+        }
     });
 });

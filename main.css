@@ -68,8 +68,8 @@ footer {
 }
 
 .form-group {
-    margin-bottom: -5px !important;
-    margin-top: -5px !important;
+    margin-bottom: -6px !important;
+    margin-top: -6px !important;
 }
 
 .form-group section {
@@ -115,6 +115,10 @@ input[type='number'] {
     font-weight: bold;
     color: #34745D !important;
     margin-right: 5px;
+}
+
+.form-check-label {
+    font-size: 11px;
 }
 
 #controlbutton {
@@ -302,4 +306,36 @@ button {
     color: #34745D !important;
     border-color: #a39574 !important;
     background-color: #a39574 !important;
+}
+
+input[type='radio']:after {
+    width: 15px;
+    height: 15px;
+    border-radius: 15px;
+    top: -2px;
+    left: -1px;
+    position: relative;
+    background-color: #deebdb;
+    content: '';
+    display: inline-block;
+    visibility: visible;
+    border: 2px solid #deebdb;
+}
+
+input[type='radio']:hover:after {
+    background-color: #ccc;
+}
+
+input[type='radio']:checked:after {
+    width: 15px;
+    height: 15px;
+    border-radius: 15px;
+    top: -2px;
+    left: -1px;
+    position: relative;
+    background-color: #DCC898;
+    content: '';
+    display: inline-block;
+    visibility: visible;
+    border: 2px solid #deebdb;
 }

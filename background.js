@@ -14,6 +14,7 @@ const weiboDataModes = {
     ],
     'spZnl': 'https://weibo.com/p/100808cd19f50b7e758a497f78651157aecdc5/super_index',
     'mpZnl': 'https://weibo.com'
+    // 'wq': 'https://weibo.com'
 }
 var activeMode = 'spCheckIn';
 var activeControl = 'weiboData';
@@ -60,6 +61,8 @@ window.onload = function () {
                 startSendingWeiboData('spZnl');
             } else if (activeInput['mpZnlInput'] > 0) {
                 startSendingWeiboData('mpZnl');
+            // } else if (activeInput['wqInput'] > 0) {
+            //     startSendingWeiboData('wq');
             } else if (activeInput['zpzControl']) {
                 startSendingZpz().then((result) => {
                     if (!result.isSuccess) {
@@ -83,6 +86,8 @@ window.onload = function () {
                         startSendingWeiboData('spZnl');
                     } else if (activeInput['mpZnlInput'] > 0) {
                         startSendingWeiboData('mpZnl');
+                    // } else if (activeInput['wqInput'] > 0) {
+                    //     startSendingWeiboData('wq');
                     } else if (activeInput['zpzControl']) {
                         startSendingZpz().then((result) => {
                             if (!result.isSuccess) {
@@ -101,6 +106,8 @@ window.onload = function () {
                 startSendingWeiboData('spZnl');
             } else if (activeInput['mpZnlInput'] > 0) {
                 startSendingWeiboData('mpZnl');
+            // } else if (activeInput['wqInput'] > 0) {
+            //     startSendingWeiboData('wq');
             } else if (activeInput['zpzControl']) {
                 startSendingZpz().then((result) => {
                     if (!result.isSuccess) {
@@ -120,6 +127,8 @@ window.onload = function () {
                         startSendingWeiboData('spZnl');
                     } else if (activeInput['mpZnlInput'] > 0) {
                         startSendingWeiboData('mpZnl');
+                    // } else if (activeInput['wqInput'] > 0) {
+                    //     startSendingWeiboData('wq');
                     } else if (activeInput['zpzControl']) {
                         startSendingZpz().then((result) => {
                             if (!result.isSuccess) {
@@ -134,6 +143,8 @@ window.onload = function () {
         } else if (msg['from'] == 'content' && msg['type'] == 'finishedSpZnl') {
             if (activeInput['mpZnlInput'] > 0) {
                 startSendingWeiboData('mpZnl');
+            // } else if (activeInput['wqInput'] > 0) {
+            //     startSendingWeiboData('wq');
             } else if (activeInput['zpzControl']) {
                 startSendingZpz().then((result) => {
                     if (!result.isSuccess) {
@@ -144,6 +155,18 @@ window.onload = function () {
                 finishSending('');
             }
         } else if (msg['from'] == 'content' && msg['type'] == 'finishedMpZnl') {
+        //     if (activeInput['wqInput'] > 0) {
+        //         startSendingWeiboData('wq');
+        //     } else if (activeInput['zpzControl']) {
+        //         startSendingZpz().then((result) => {
+        //             if (!result.isSuccess) {
+        //                 finishSending(result.msg)
+        //             }
+        //         })
+        //     } else {
+        //         finishSending('');
+        //     }
+        // } else if (msg['from'] == 'content' && msg['type'] == 'finishedWq') {
             if (activeInput['zpzControl']) {
                 startSendingZpz().then((result) => {
                     if (!result.isSuccess) {
@@ -306,8 +329,11 @@ function sendingWeiboData(type, resolve) {
                     'reading': activeInput['reading'],
                     'searching': activeInput['searching'],
                     'spZnlInput': activeInput['spZnlInput'],
+                    'wbContent': activeInput['wbContent'],
                     'mpZnlInput': activeInput['mpZnlInput'],
                     'mpZnlTag': activeInput['mpZnlTag'],
+                    // 'wqInput': activeInput['wqInput'],
+                    'wqTag': activeInput['wqTag'],
                     'activeMsg': activeMsg
                 }, function (msg) {
                     console.log(msg);
@@ -377,6 +403,8 @@ async function startSending() {
                 result = await startSendingWeiboData('spZnl');
             } else if (activeInput['mpZnlInput'] > 0) {
                 result = await startSendingWeiboData('mpZnl');
+            // } else if (activeInput['wqInput'] > 0) {
+            //     result = await startSendingWeiboData('wq');
             }
         } else {
             result = await startSendingZpz();
