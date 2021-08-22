@@ -96,6 +96,7 @@ function sleep(ms) {
 
 async function bdComment() {
     console.log('start bd commenting');
+	
     await sleep(5000);
     console.log("commented!");
     activeMsg.bdCommentStatus = true;
@@ -109,8 +110,26 @@ async function bdComment() {
     }
 }
 
+async function postBaidu(title, content) {
+    var inputTitleBox = (await getElementsByXPath('//div[@class="j_title_wrap"]/input')).snapshotItem(0);
+	var inputContentBox = (await getElementsByXPath('//div[@id="ueditor_replace"]/p')).snapshotItem(0);
+    var postButton = (await getElementsByXPath('//button[@title="Ctrl+Enter快捷发表"]')).snapshotItem(0);
+    inputTitleBox.value = title;
+	inputContentBox.textContent = content;
+    inputTitleBox.dispatchEvent(new Event('change'));
+	inputContentBox.dispatchEvent(new Event('change'));
+    await sleep(1000);
+    postButton.click();
+    await sleep(3000);
+    var repsonse = await handlePopup();
+    return repsonse;
+}
+
 async function bd(numBdPost) {
     console.log('start bd posting');
+	var title = bdTitleGenerator();
+	var content = kkGenerator('');
+	postBaidu(title, content);
     await sleep(5000);
     console.log("posted!");
     activeMsg.bdCount++;
@@ -587,6 +606,10 @@ function wqGenerator(tag) {
         '❗️'.repeat(Math.floor(Math.random() * 10)) + '💢'.repeat(Math.floor(Math.random() * 10)) + 
         '\n' + str + ' test iPad 养乐多';
     return str;
+}
+
+function bdTitleGenerator() {
+	return WORDS[Math.floor(Math.random() * WORDS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + ZNL[Math.floor(Math.random() * ZNL.length)];
 }
 
 async function spZnl(numSpZnl) {
