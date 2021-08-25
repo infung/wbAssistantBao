@@ -19,8 +19,7 @@ var activeMsg = {
     likeOriginStatus: '',
     searchingStatus: false,
     bdCommentStatus: false,
-    bdCount: 0,
-    bdMsg: '',
+    bdPostStatus: false,
 }
 
 var running = false;
@@ -77,11 +76,11 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         setPriorState(msg['activeMsg']);
         bdComment();
         sendResponse('weiboData bdBuilding start sending');
-    } else if (msg['from'] == 'background' && msg['type'] == 'bd') {
+    } else if (msg['from'] == 'background' && msg['type'] == 'bdPost') {
         running = true;
         setPriorState(msg['activeMsg']);
-        bd(msg["bdInput"]);
-        sendResponse('weiboData bd start sending');
+        bdPost();
+        sendResponse('weiboData bdPost start sending');
     } else if (msg["from"] == 'background' && msg["type"] == "stopSending") {
         running = false;
         sendResponse('stop sending');
@@ -479,19 +478,6 @@ function randomRange(min, max) {
     return returnStr;
 }
 
-function commentGenerator() {
-    var str = randomRange(4, 8);
-    str = WORDS[Math.floor(Math.random() * WORDS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        WORDS[Math.floor(Math.random() * WORDS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        WORDS[Math.floor(Math.random() * WORDS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        str + ' @INTO1-伯远';
-    return str;
-}
-
 function amanGenerator() {
     var str = randomRange(4, 8);
     if (Math.random() <= 0.1) {
@@ -548,15 +534,29 @@ function kkGenerator(tag) {
 
 function wqGenerator(tag) {
     var str = randomRange(4, 8);
-    str = tag + '\n' + WEIQUAN[Math.floor(Math.random() * WEIQUAN.length)] + '❗️'.repeat(Math.floor(Math.random() * 10)) + 
-        '\n' + '❌'.repeat(Math.floor(Math.random() * 10)) + WEIQUANEND[Math.floor(Math.random() * WEIQUANEND.length)] + 
-        '❗️'.repeat(Math.floor(Math.random() * 10)) + '💢'.repeat(Math.floor(Math.random() * 10)) + 
+    str = tag + '\n' + WEIQUAN[Math.floor(Math.random() * WEIQUAN.length)] + '❗️'.repeat(Math.floor(Math.random() * 10)) +
+        '\n' + '❌'.repeat(Math.floor(Math.random() * 10)) + WEIQUANEND[Math.floor(Math.random() * WEIQUANEND.length)] +
+        '❗️'.repeat(Math.floor(Math.random() * 10)) + '💢'.repeat(Math.floor(Math.random() * 10)) +
         '\n' + str + ' test iPad 养乐多';
     return str;
 }
 
 function bdTitleGenerator() {
-	return WORDS[Math.floor(Math.random() * WORDS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + ZNL[Math.floor(Math.random() * ZNL.length)];
+    return WORDS[Math.floor(Math.random() * WORDS.length)] + '，' + ZNL[Math.floor(Math.random() * ZNL.length)];
+}
+
+function bdContentGenerator() {
+    return PREFIX[Math.floor(Math.random() * PREFIX.length)] + '，' + WORDS[Math.floor(Math.random() * WORDS.length)] + '。 ' +
+        AMANTAGS[Math.floor(Math.random() * AMANTAGS.length)] + ' ' + TEXTS[Math.floor(Math.random() * TEXTS.length)] + '，' +
+        TEXTS[Math.floor(Math.random() * TEXTS.length)] + '，' + TEXTS[Math.floor(Math.random() * TEXTS.length)] +
+        RAINBOWFART[Math.floor(Math.random() * WORDS.length)] + '。' + TAGS[Math.floor(Math.random() * TAGS.length)];
+}
+
+function bdCommentGenerator() {
+    return PREFIX[Math.floor(Math.random() * PREFIX.length)] + '，' + WORDS[Math.floor(Math.random() * WORDS.length)] + '。 ' +
+        AMANTAGS[Math.floor(Math.random() * AMANTAGS.length)] + ' ' + TEXTS[Math.floor(Math.random() * TEXTS.length)] + '，' +
+        TEXTS[Math.floor(Math.random() * TEXTS.length)] + '，' + TEXTS[Math.floor(Math.random() * TEXTS.length)] +
+        RAINBOWFART[Math.floor(Math.random() * WORDS.length)] + '。' + TAGS[Math.floor(Math.random() * TAGS.length)];
 }
 
 async function spZnl(numSpZnl) {
@@ -812,7 +812,49 @@ async function amanComment() {
     }
 }
 
+async function handleBdPopup() {
+    var loginPopup = await getElementsByXPath('//div[contains(@id, "tiebaCustomPassLogin")]');
+    var dialogPopup = await getElementsByXPath('//div[@class="uiDialogWrapper"]');
+    if (loginPopup.snapshotLength === 0 && dialogPopup.snapshotLength === 0) {
+        return { 'code': '100000', 'msg': '' };
+    } else if (loginPopup.snapshotLength !== 0) {
+
+        //document.getElementsByClassName('close-btn')[0].click()
+        return { 'code': '100001', 'msg': '请登录百度贴吧。' };
+    } else if (dialogPopup.snapshotLength !== 0) {
+        // dialog popup found, will try to dismiss it.
+        var dialogClose = await getElementsByXPath('//a[@class="dialogJclose"]');
+        if (dialogClose.snapshotLength !== 0) {
+            dialogClose.snapshotItem(0).click();
+        } else {
+            console.log('No available dismiss button found');
+        }
+        return { 'code': '100002', 'msg': '' };
+    }
+}
+
 async function getBdBuilding() {
+    //关注
+    await waitElementPresent('//a[contains(@id, "j_head_focus_btn")]');
+    var focusButton = document.getElementById('j_head_focus_btn');
+    if (!focusButton.classList.contains('cancel_focus')) {
+        focusButton.click();
+        await sleep(2500);
+        await handleBdPopup();
+        await sleep(1500);
+    }
+    console.log("已关注!");
+    //签到
+    await waitElementPresent('//div[contains(@id, "signstar_wrapper")]');
+    var signButton = (await getElementsByXPath('//div[contains(@id, "signstar_wrapper")]/a')).snapshotItem(0);
+    if (signButton.title !== '签到完成') {
+        signButton.click();
+        await sleep(1000);
+        signButton.click();
+        await sleep(3000);
+    }
+    console.log("已签到!");
+    // retrieve the aman building
     await waitElementPresent('//ul[@id="thread_top_list"]');
     var buildingUrl = document.getElementById("thread_top_list").getElementsByClassName('j_th_tit')[1].href;
     if (!running) {
@@ -824,23 +866,29 @@ async function getBdBuilding() {
     }
 }
 
-// ***********************testing functions for interation***********************************************************************
-
-async function handleBdPopup() { 
-    var popupLayer = await getElementsByXPath('//div[contains(@id, "tiebaCustomPassLogin")]');
-    if (popupLayer.snapshotLength === 0) {
-        return { 'code': '100000', 'msg': '' };
-    } else {
-        return { 'code': '100001', 'msg': '请登录百度贴吧。' };
-    }
+async function commentBaidu(content) {
+    var inputContentBox = (await getElementsByXPath('//div[@id="ueditor_replace"]')).snapshotItem(0);
+    var postButton = (await getElementsByXPath('//a[@title="Ctrl+Enter快捷发表"]')).snapshotItem(0);
+    inputContentBox.textContent = content;
+    inputContentBox.dispatchEvent(new Event('change'));
+    await sleep(1000);
+    postButton.click();
+    await sleep(8000);
+    var response = await handleBdPopup();
+    return response;
 }
 
 async function bdComment() {
-    console.log('start bd commenting');
-	
-    await sleep(5000);
-    console.log("commented!");
-    activeMsg.bdCommentStatus = true;
+    await waitElementPresent('//div[@class="tb_rich_poster_container"]');
+    await scrollToBottom('//div[@class="tb_rich_poster_container"]');
+
+    await waitElementPresent('//div[@class="tb_poster_placeholder"]');
+    var contentPlaceHolder = (await getElementsByXPath('//div[@class="tb_poster_placeholder"]')).snapshotItem(0);
+    contentPlaceHolder.style.display = 'none';
+
+    var comment = bdCommentGenerator();
+    var response = await commentBaidu(comment);
+    if (response.code === '100000') activeMsg.bdCommentStatus = true;
     sendState();
     if (!running) {
         console.log('stop due to [stop button]');
@@ -853,49 +901,40 @@ async function bdComment() {
 
 async function postBaidu(title, content) {
     var inputTitleBox = (await getElementsByXPath('//div[@class="j_title_wrap"]/input')).snapshotItem(0);
-	var inputContentBox = (await getElementsByXPath('//div[@id="ueditor_replace"]')).snapshotItem(0);
+    var inputContentBox = (await getElementsByXPath('//div[@id="ueditor_replace"]')).snapshotItem(0);
     var postButton = (await getElementsByXPath('//button[@title="Ctrl+Enter快捷发表"]')).snapshotItem(0);
     inputTitleBox.value = title;
     inputTitleBox.dispatchEvent(new Event('change'));
     await sleep(1000);
-	inputContentBox.textContent = content;
-	inputContentBox.dispatchEvent(new Event('change'));
+    inputContentBox.textContent = content;
+    inputContentBox.dispatchEvent(new Event('change'));
     await sleep(1000);
     postButton.click();
-    await sleep(5000);
-    var response = handleBdPopup();
+    await sleep(8000);
+    var response = await handleBdPopup();
     return response;
 }
 
-async function bd(numBdPost) {
+async function bdPost() {
     await waitElementPresent('//div[@class="tb_rich_poster_container"]');
     await scrollToBottom('//div[@class="tb_rich_poster_container"]');
 
-    var titlePlaceHolder = (await getElementsByXPath('//div[@class="tbui_placeholder"]')).snapshotItem(0); 
+    var titlePlaceHolder = (await getElementsByXPath('//div[@class="tbui_placeholder"]')).snapshotItem(0);
     var contentPlaceHolder = (await getElementsByXPath('//div[@class="tb_poster_placeholder"]')).snapshotItem(0);
     titlePlaceHolder.style.display = 'none';
     contentPlaceHolder.style.display = 'none';
 
-    var title = '';
-    var content = '';
-    var response = null;
-    while (running && activeMsg.bdCount < numBdPost) {
-        title = bdTitleGenerator();
-        content = znlGenerator();
-        response = await postBaidu(title, content);
-        if (response.code === '100000') activeMsg.bdCount++;
-        console.log('已发帖：' + activeMsg.bdCount);
-        activeMsg.bdMsg = response.msg;
-        sendState();
-        if (response.code === '100001') break;
-    }
+    var title = bdTitleGenerator();
+    var content = bdContentGenerator();
+    var response = await postBaidu(title, content);
+    if (response.code === '100000') activeMsg.bdPostStatus = true;
+    sendState();
 
     if (!running) {
         console.log('stop due to [stop button]');
     } else {
         running = false;
         console.log('stop due to [finished]');
-        chrome.runtime.sendMessage({ "type": "finishedBd", "from": "content" });
+        chrome.runtime.sendMessage({ "type": "finishedBdPost", "from": "content" });
     }
 }
-// ********************************************************************************************************************************

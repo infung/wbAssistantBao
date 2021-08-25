@@ -48,7 +48,7 @@ $(function () {
 
         var searchingSofar = false;
         var bdCommentSofar = false;
-        var bdSofar = '';
+        var bdPostSofar = false;
 
         if (!jQuery.isEmptyObject(msg)) {
             if (msg['spCheckInStatus']) spCheckInSofar = true;
@@ -73,9 +73,7 @@ $(function () {
 
             if (msg['searchingStatus']) searchingSofar = true;
             if (msg['bdCommentStatus']) bdCommentSofar = true;
-            if ((msg['bdCount'] != null && msg['bdCount'] > 0) || !!msg['bdMsg']) {
-                bdSofar = '已发帖' + msg['bdCount'] + '条。' + msg['bdCount'];
-            }
+            if (msg['bdPostStatus']) bdPostSofar = true;
         }
 
         if (spCheckInSofar) {
@@ -104,6 +102,11 @@ $(function () {
         } else {
             $('#bdCommentStatus').hide();
         }
+        if (bdPostSofar) {
+            $('#bdPostStatus').show();
+        } else {
+            $('#bdPostStatus').hide();
+        }
         
         $('#currentSpZnl').text(spZnlSofar);
         $('#currentMpZnl').text(mpZnlSofar);
@@ -111,8 +114,6 @@ $(function () {
         $('#currentRepost').text(repostSofar);
         $('#currentComment').text(commentSofar);
         $('#currentLike').text(likeSofar);
-
-        $('#currentBd').text(bdSofar);
     }
     setView = function (details) {
         if (details['weiboDataControl']) {
@@ -184,7 +185,11 @@ $(function () {
         } else {
             $('#bdComment').prop('checked', false);
         }
-        $('#bdInput').val(details['bdInput']);
+        if (details['bdPost']) {
+            $('#bdPost').prop('checked', true);
+        } else {
+            $('#bdPost').prop('checked', false);
+        }
     }
 
     setInput = function () {
@@ -233,11 +238,10 @@ $(function () {
 
         var searching = $('#searching').is(":checked");
         var bdComment = $('#bdComment').is(":checked");
-        var bdInput = $('#bdInput').val();
-        bdInput = bdInput - 0;
+        var bdPost = $('#bdPost').is(":checked");
         if (searching == null) searching = true;
-        if (bdComment == null) bdComment = false;
-        if (bdInput == null || isNaN(bdInput)) bdInput = 0;
+        if (bdComment == null) bdComment = true;
+        if (bdPost == null) bdPost = true;
 
         chrome.runtime.sendMessage(null, {
             'type': 'input',
@@ -263,7 +267,7 @@ $(function () {
                 'likeOrigin': likeOrigin,
                 'searching': searching,
                 'bdComment': bdComment,
-                'bdInput': bdInput
+                'bdPost': bdPost
             }
         }, null, function (msg) {
             if (!!msg) {

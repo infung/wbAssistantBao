@@ -18,7 +18,7 @@ var AmanDataModes = {
         'https://search.bilibili.com/all?keyword=%E4%BC%AF%E8%BF%9C&from_source=web_search'
     ],
     'bdComment': 'https://tieba.baidu.com/f?ie=utf-8&kw=%E4%BC%AF%E8%BF%9Cxevier',
-    'bd': 'https://tieba.baidu.com/f?ie=utf-8&kw=%E4%BC%AF%E8%BF%9Cxevier',
+    'bdPost': 'https://tieba.baidu.com/f?ie=utf-8&kw=%E4%BC%AF%E8%BF%9Cxevier',
     'bdBuilding': ''
 }
 
@@ -76,8 +76,8 @@ window.onload = function () {
                     startSendingData('searching');
                 } else if (activeInput['bdComment']) {
                     startSendingData('bdComment');
-                } else if (activeInput['bdInput'] > 0) {
-                    startSendingData('bd');
+                } else if (activeInput['bdPost']) {
+                    startSendingData('bdPost');
                 }
             } else {
                 finishSending('');
@@ -105,8 +105,8 @@ window.onload = function () {
                             startSendingData('searching');
                         } else if (activeInput['bdComment']) {
                             startSendingData('bdComment');
-                        } else if (activeInput['bdInput'] > 0) {
-                            startSendingData('bd');
+                        } else if (activeInput['bdPost']) {
+                            startSendingData('bdPost');
                         }
                     } else {
                         finishSending('');
@@ -129,8 +129,8 @@ window.onload = function () {
                     startSendingData('searching');
                 } else if (activeInput['bdComment']) {
                     startSendingData('bdComment');
-                } else if (activeInput['bdInput'] > 0) {
-                    startSendingData('bd');
+                } else if (activeInput['bdPost']) {
+                    startSendingData('bdPost');
                 }
             } else {
                 finishSending('');
@@ -149,8 +149,8 @@ window.onload = function () {
                     startSendingData('searching');
                 } else if (activeInput['bdComment']) {
                     startSendingData('bdComment');
-                } else if (activeInput['bdInput'] > 0) {
-                    startSendingData('bd');
+                } else if (activeInput['bdPost']) {
+                    startSendingData('bdPost');
                 }
             } else {
                 finishSending('');
@@ -167,8 +167,8 @@ window.onload = function () {
                     startSendingData('searching');
                 } else if (activeInput['bdComment']) {
                     startSendingData('bdComment');
-                } else if (activeInput['bdInput'] > 0) {
-                    startSendingData('bd');
+                } else if (activeInput['bdPost']) {
+                    startSendingData('bdPost');
                 }
             } else {
                 finishSending('');
@@ -179,8 +179,8 @@ window.onload = function () {
                     startSendingData('searching');
                 } else if (activeInput['bdComment']) {
                     startSendingData('bdComment');
-                } else if (activeInput['bdInput'] > 0) {
-                    startSendingData('bd');
+                } else if (activeInput['bdPost']) {
+                    startSendingData('bdPost');
                 }
             } else {
                 finishSending('');
@@ -193,8 +193,8 @@ window.onload = function () {
                     console.log('finished reading, continue other tasks.');
                     if (activeInput['bdComment']) {
                         startSendingData('bdComment');
-                    } else if (activeInput['bdInput'] > 0) {
-                        startSendingData('bd');
+                    } else if (activeInput['bdPost']) {
+                        startSendingData('bdPost');
                     } else {
                         finishSending('');
                     }
@@ -204,12 +204,12 @@ window.onload = function () {
             AmanDataModes['bdBuilding'] = msg['bdBuilding'];
             startSendingData('bdBuilding');
         } else if (msg['from'] == 'content' && msg['type'] == 'finishedBdComment') {
-            if (activeInput['bdInput'] > 0) {
-                startSendingData('bd');
+            if (activeInput['bdPost']) {
+                startSendingData('bdPost');
             } else {
                 finishSending('');
             }
-        } else if (msg['from'] == 'content' && msg['type'] == 'finishedBd') {
+        } else if (msg['from'] == 'content' && msg['type'] == 'finishedBdPost') {
             finishSending('');
         } else if (msg['from'] == 'content' && msg['type'] == 'state') {
             activeMsg = msg['activeMsg'];
@@ -367,7 +367,7 @@ function sendingData(type, resolve) {
                     'wqTag': activeInput['wqTag'],
                     'searching': activeInput['searching'],
                     'bdComment': activeInput['bdComment'],
-                    'bdInput': activeInput['bdInput'],
+                    'bdPost': activeInput['bdPost'],
                     'activeMsg': activeMsg,
                 }, function (msg) {
                     console.log(msg);
@@ -449,8 +449,8 @@ async function startSending() {
                 result = await startSendingData('searching');
             } else if (activeInput['bdComment']) {
                 result = await startSendingData('bdComment');
-            } else if (activeInput['bdInput'] > 0) {
-                result = await startSendingData('bd');
+            } else if (activeInput['bdPost']) {
+                result = await startSendingData('bdPost');
             }
         }
     }
