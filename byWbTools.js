@@ -7,12 +7,9 @@ var activeMsg = {
     amanCommentStatus: false,
     readingStatus: false,
     searchingStatus: false,
-    spZnlCount: 0,
-    mpZnlCount: 0,
-    // wqCount: 0,
-    spZnlMsg: '',
-    mpZnlMsg: '',
-    // wqMsg: '',
+    tagSearchStatus: false,
+    wbPostCount: 0,
+    wbPostMsg: '',
     likeCount: 0,
     commentCount: 0,
     repostCount: 0,
@@ -43,33 +40,28 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         setPriorState(msg['activeMsg']);
         reading();
         sendResponse('weiboData reading start sending');
+    } else if (msg['from'] == 'background' && msg['type'] == 'tagSearch') {
+        running = true;
+        setPriorState(msg['activeMsg']);
+        searching('tagSearch');
+        sendResponse('weiboData tagSearch start sending');
     } else if (msg['from'] == 'background' && msg['type'] == 'searching') {
         running = true;
         setPriorState(msg['activeMsg']);
-        searching();
+        searching('searching');
         sendResponse('weiboData searching start sending');
-    } else if (msg['from'] == 'background' && msg['type'] == 'spZnl') {
+    } else if (msg['from'] == 'background' && (msg['type'] == 'superTopic' || msg['type'] == 'mainPage')) {
         running = true;
         setPriorState(msg['activeMsg']);
-        spZnl(msg['spZnlInput']);
-        sendResponse('weiboData spZnl start sending');
-    } else if (msg['from'] == 'background' && msg['type'] == 'mpZnl') {
-        running = true;
-        setPriorState(msg['activeMsg']);
-        mpZnl(msg['wbContent'], msg['mpZnlInput'], msg['mpZnlTag'], msg['wqTag']);
-        sendResponse('weiboData mpZnl start sending');
-    // } else if (msg['from'] == 'background' && msg['type'] == 'wq') {
-    //     running = true;
-    //     setPriorState(msg['activeMsg']);
-    //     wq(msg['wqInput'], msg['wqTag']);
-    //     sendResponse('weiboData wq start sending');
+        wbPost(msg['wbPostOrigin'], msg['wbPostInput'], msg['wbPostTag'], msg['wqTag']);
+        sendResponse('weiboData wbPost start sending');
     } else if (msg["from"] == 'background' && msg["type"] == "allForBY") {
         checkBoYuanOnly().then(sendResponse);
         return true;
     } else if (msg["from"] == 'background' && msg["type"] == "zpz") {
         running = true;
         setPriorState(msg['activeMsg']);
-        zpz(msg["repostInput"], msg["commentInput"], msg["likeInput"], msg["repostContent"], msg["commentContent"], msg["likeOrigin"]);
+        zpz(msg["repostInput"], msg["commentInput"], msg["likeInput"], msg["repostContent"], msg["randomRepost"], msg["commentContent"], msg["randomComment"], msg["likeOrigin"]);
         sendResponse('zpz start sending');
     } else if (msg["from"] == 'background' && msg["type"] == "stopSending") {
         running = false;
@@ -126,13 +118,13 @@ async function checkBoYuanOnly() {
     return boyuanFlag;
 }
 
-function postWeibo(content, mainPage) {
+function postWeibo(content, wbPostOrigin) {
     return new Promise(resolve => {
         var Data = new FormData();
         var api = 'https://weibo.com/aj/mblog/add?ajwvr=6&__rnd=';
         var superTopicId = null;
 
-        if (mainPage) {
+        if (wbPostOrigin == 'mainPage') {
             Data.append('pic_id', '');
             Data.append('appkey', '');
             Data.append('mid', '');
@@ -362,7 +354,7 @@ async function commentWeiboWithoutMid(content) {
     return repsonse;
 }
 
-async function commentWeibo(numComments, commentContent) {
+async function commentWeibo(numComments, commentContent, randomComment) {
     await waitElementPresent('//a[@class="S_txt2" and @action-type="fl_comment"]');
     var commentButton = await getElementsByXPath('//a[@class="S_txt2" and @action-type="fl_comment"]');
     commentButton.snapshotItem(0).click();
@@ -371,7 +363,11 @@ async function commentWeibo(numComments, commentContent) {
     var cstr = '';
     var response = null;
     while (running && activeMsg.commentCount < numComments) {
-        cstr = commentContent + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+        if (randomComment) {
+            cstr = kuakuaGenerator();
+        } else {
+            cstr = commentContent + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+        }
         response = await commentWeiboWithoutMid(cstr);
         if (response.code === '100000') activeMsg.commentCount++;
         console.log('已评论：' + activeMsg.commentCount);
@@ -400,7 +396,7 @@ async function reposetWeiboWithoutMid(content) {
     return repsonse;
 }
 
-async function repostWeibo(numReposts, repostContent) {
+async function repostWeibo(numReposts, repostContent, randomRepost) {
     await waitElementPresent('//a[@action-type="fl_forward"]');
     var commentButton = await getElementsByXPath('//a[@action-type="fl_forward"]');
     commentButton.snapshotItem(0).click();
@@ -412,13 +408,18 @@ async function repostWeibo(numReposts, repostContent) {
     var originContent = (await getElementsByXPath('//div[@class="p_input p_textarea"]/textarea')).snapshotItem(0).value;
     if (originContent.lastIndexOf('//', 0) !== 0) originContent = '';
     //trim repost text content
-    var textLimit = (await getElementsByXPath('//span[@class="tips S_txt2"]')).snapshotItem(0).textContent;
-    if (textLimit < 6) {
-        originContent = originContent.substring(0, originContent.length - (8 - textLimit));
-    }
+    // var textLimit = (await getElementsByXPath('//span[@class="tips S_txt2"]')).snapshotItem(0).textContent;
+    // if (textLimit < 6) {
+    //     originContent = originContent.substring(0, originContent.length - (8 - textLimit));
+    // }
     var response = null;
+    var rstr = '';
     while (running && activeMsg.repostCount < numReposts) {
-        var rstr = repostContent + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + originContent;
+        if (randomRepost) {
+            rstr = kuakuaGenerator();
+        } else {
+            rstr = repostContent + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + originContent;
+        }
         var response = await reposetWeiboWithoutMid(rstr);
         if (response.code === '100000') activeMsg.repostCount++;
         console.log('转发：' + activeMsg.repostCount);
@@ -435,13 +436,13 @@ async function repostWeibo(numReposts, repostContent) {
     return activeMsg.repostCount;
 }
 
-async function zpz(numReposts, numComments, numLikes, repostContent, commentContent, likeOrigin) {
+async function zpz(numReposts, numComments, numLikes, repostContent, randomRepost, commentContent, randomComment, likeOrigin) {
     //const url = chrome.runtime.getURL('content.json');
     //const contentJson = await (await fetch(url)).json();
 
     if (likeOrigin && running) activeMsg.likeOriginStatus = await clickOuterLike();
-    if (numReposts !== 0 && running) activeMsg.repostCount = await repostWeibo(numReposts, repostContent);
-    if (numComments !== 0 && running) activeMsg.commentCount = await commentWeibo(numComments, commentContent);
+    if (numReposts !== 0 && running) activeMsg.repostCount = await repostWeibo(numReposts, repostContent, randomRepost);
+    if (numComments !== 0 && running) activeMsg.commentCount = await commentWeibo(numComments, commentContent, randomComment);
     if (numLikes !== 0 && running) activeMsg.likeCount = await likeWeibo(numLikes);
     console.log('outer like: ' + activeMsg.likeOriginStatus + '; repost count: ' + activeMsg.repostCount + '; comment count: ' + activeMsg.commentCount + '; like count: ' + activeMsg.likeCount);
     if (!running) {
@@ -466,6 +467,20 @@ function randomRange(min, max) {
         returnStr += arr[index];
     }
     return returnStr;
+}
+
+function kuakuaGenerator() {
+    var str = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+    if (Math.random() <= 0.5) {
+        str += RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            ' @INTO1-伯远';
+    } else {
+        str += KUAKUASTART[Math.floor(Math.random() * KUAKUASTART.length)] + RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] +
+            KUAKUAEND[Math.floor(Math.random() * KUAKUAEND.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            ' @INTO1-伯远';
+    }
+    return str;
+
 }
 
 function commentGenerator() {
@@ -509,88 +524,44 @@ function amanGenerator() {
     return str;
 }
 
-function znlGenerator() {
+function wbGenerator(tag) {
     var str = randomRange(4, 8);
     var phrase = (ZNL.concat(BOYUANPHRASE)).concat(RAINBOWFART);
-    str = ZNLTAG1 + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + TAGS[Math.floor(Math.random() * TAGS.length)] +
-        '\n' + PREFIX[Math.floor(Math.random() * PREFIX.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        WORDS[Math.floor(Math.random() * WORDS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        '\n' + phrase[Math.floor(Math.random() * phrase.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        '\n我爱伯远 ' + EMOTICION[Math.floor(Math.random() * EMOTICION.length)] + str +
-        '\n' + '@INTO1-伯远';
+    if (Math.random() <= 0.5) {
+        str = tag + '\n' + PREFIX[Math.floor(Math.random() * PREFIX.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + KUAKUASTART[Math.floor(Math.random() * KUAKUASTART.length)] +
+            phrase[Math.floor(Math.random() * phrase.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + QUOTATION[Math.floor(Math.random() * QUOTATION.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + KUAKUAEND[Math.floor(Math.random() * KUAKUAEND.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + '我好喜欢伯远，因为' + WORDS[Math.floor(Math.random() * WORDS.length)] +
+            EMOTICION[Math.floor(Math.random() * EMOTICION.length)] + ' ' + str + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + '@INTO1-伯远';
+    } else {
+        str = tag + '\n' + PREFIX[Math.floor(Math.random() * PREFIX.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOTICION[Math.floor(Math.random() * EMOTICION.length)] +
+            '\n' + phrase[Math.floor(Math.random() * phrase.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + '伯丝爱伯远，理由是' + WORDS[Math.floor(Math.random() * WORDS.length)] +
+            EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + '@INTO1-伯远';
+    }
     return str;
 }
 
-function kkGenerator(tag) {
-    var str = randomRange(4, 8);
-    str = tag + '\n' + PREFIX[Math.floor(Math.random() * PREFIX.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        '\n' + KUAKUASTART[Math.floor(Math.random() * KUAKUASTART.length)] +
-        RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] + '。' + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        '\n' + QUOTATION[Math.floor(Math.random() * QUOTATION.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        '\n' + KUAKUAEND[Math.floor(Math.random() * KUAKUAEND.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        '\n' + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + '我好喜欢伯远，因为' + WORDS[Math.floor(Math.random() * WORDS.length)] +
-        EMOTICION[Math.floor(Math.random() * EMOTICION.length)] + ' ' + str + EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-    return str;
-}
-
-function wqGenerator(tag) {
-    var str = randomRange(4, 8);
-    str = tag + '\n' + WEIQUAN[Math.floor(Math.random() * WEIQUAN.length)] + '❗️'.repeat(Math.floor(Math.random() * 10)) + 
-        '\n' + '❌'.repeat(Math.floor(Math.random() * 10)) + WEIQUANEND[Math.floor(Math.random() * WEIQUANEND.length)] + 
-        '❗️'.repeat(Math.floor(Math.random() * 10)) + '💢'.repeat(Math.floor(Math.random() * 10)) + 
-        '\n' + str + ' test iPad 养乐多';
-    return str;
-}
-
-async function spZnl(numSpZnl) {
+async function wbPost(wbPostOrigin, numWbPost, wbPostTag, wqTag) {
     //const url = chrome.runtime.getURL('content.json');
     //const contentJson = await (await fetch(url)).json();
 
     const interval = setInterval(async () => {
-        var znlstr = znlGenerator();
-        var znlResponse = await postWeibo(znlstr, false);
-        if (znlResponse.code === '100000') {
-            activeMsg.spZnlCount++;
-            znlResponse.msg = '';
-        }
-        activeMsg.spZnlMsg = znlResponse.msg;
-        sendState();
-        if (!running || activeMsg.spZnlCount === numSpZnl || znlResponse.code !== '100000') {
-            clearInterval(interval);
-            await sleep(1000);
-            if (!running) {
-                console.log('stop due to [stop button]');
-            } else {
-                running = false;
-                console.log('stop due to [finished]');
-                chrome.runtime.sendMessage({ "type": "finishedSpZnl", "from": "content" });
-            }
-            //activeMsg.spZnlCount = 0;
-        }
-    }, 3000);
-}
-
-async function mpZnl(wbContent, numMpZnl, mpZnlTag, wqTag) {
-    //const url = chrome.runtime.getURL('content.json');
-    //const contentJson = await (await fetch(url)).json();
-
-    const interval = setInterval(async () => {
-        var str = '';
-        if (wbContent === 'weiquan') {
-            str = wqGenerator(wqTag);
-        } else {
-            str = kkGenerator(mpZnlTag);
-        }
-        var response = await postWeibo(str, true);
+        var str = wbGenerator(wbPostTag);
+        var response = await postWeibo(str, wbPostOrigin);
         if (response.code === '100000') {
-            activeMsg.mpZnlCount++;
+            activeMsg.wbPostCount++;
             response.msg = '';
         }
-        activeMsg.mpZnlMsg = response.msg;
+        activeMsg.wbPostMsg = response.msg;
         sendState();
-        if (!running || activeMsg.mpZnlCount === numMpZnl || response.code !== '100000') {
+        if (!running || activeMsg.wbPostCount === numWbPost || response.code !== '100000') {
             clearInterval(interval);
             await sleep(1000);
             if (!running) {
@@ -598,54 +569,30 @@ async function mpZnl(wbContent, numMpZnl, mpZnlTag, wqTag) {
             } else {
                 running = false;
                 console.log('stop due to [finished]');
-                chrome.runtime.sendMessage({ "type": "finishedMpZnl", "from": "content" });
+                chrome.runtime.sendMessage({ "type": "finishedWbPost", "from": "content" });
             }
-            //activeMsg.mpZnlCount = 0;
+            //activeMsg.wbPostCount = 0;
         }
     }, 3000);
 }
 
-// async function wq(numWq, wqTag) {
-//     //const url = chrome.runtime.getURL('content.json');
-//     //const contentJson = await (await fetch(url)).json();
-
-//     const interval = setInterval(async () => {
-//         var wqstr = wqGenerator(wqTag);
-//         var wqResponse = await postWeibo(wqstr, true);
-//         if (wqResponse.code === '100000') {
-//             activeMsg.wqCount++;
-//             wqResponse.msg = '';
-//         }
-//         activeMsg.wqMsg = wqResponse.msg;
-//         sendState();
-//         if (!running || activeMsg.wqCount === numWq || wqResponse.code !== '100000') {
-//             clearInterval(interval);
-//             await sleep(1000);
-//             if (!running) {
-//                 console.log('stop due to [stop button]');
-//             } else {
-//                 running = false;
-//                 console.log('stop due to [finished]');
-//                 chrome.runtime.sendMessage({ "type": "finishedWq", "from": "content" });
-//             }
-//             //activeMsg.wqCount = 0;
-//         }
-//     }, 3000);
-// }
-// 
-function searching() {
+function searching(type) {
     var notChangedStepsCount = 0;
     var scrolldelay = setInterval(function () {
-        window.scrollBy(0, 500); // horizontal and vertical scroll increments
-        if (!running || ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight) || (notChangedStepsCount >= 30)) {
+        window.scrollBy(0, 600); // horizontal and vertical scroll increments
+        if (!running || ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight) || (notChangedStepsCount >= 20)) {
             clearInterval(scrolldelay);
             sendState();
             if (!running) {
                 console.log('stop due to [stop button]');
-            } else {
+            } else if (type == 'searching') {
                 running = false;
                 console.log('stop due to [finished]');
                 chrome.runtime.sendMessage({ "type": "finishedSearching", "from": "content" });
+            } else {
+                running = false;
+                console.log('stop due to [finished]');
+                chrome.runtime.sendMessage({ "type": "finishedTagSearch", "from": "content" });
             }
             //activeMsg.searchingStatus = false;
         } else {
@@ -776,7 +723,7 @@ async function amanComment() {
         var wbs = document.getElementsByClassName('WB_feed_type');
         for (var i = 0; i < wbs.length; i++) {
             var wbDetail = wbs[i].textContent;
-            if (!running || wbDetail.indexOf('伯远Xevier数据组') !== -1 && wbDetail.indexOf('【艾漫盖楼】') !== -1) {
+            if (!running || wbDetail.indexOf('Xevier五万人演唱会筹备中') !== -1 && wbDetail.indexOf('【伯远贴贴楼】') !== -1) {
                 amanWeibo = wbs[i];
                 nextPage = false;
                 break;

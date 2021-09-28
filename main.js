@@ -40,9 +40,8 @@ $(function () {
         var amanCommentSofar = false;
         var readingSofar = false;
         var searchingSofar = false;
-        var spZnlSofar = '';
-        var mpZnlSofar = '';
-        //var wqSofar = '';
+        var tagSearchSofar = false;
+        var wbPostSofar = '';
 
         var repostSofar = '';
         var commentSofar = '';
@@ -53,16 +52,10 @@ $(function () {
             if (msg['amanCommentStatus']) amanCommentSofar = true;
             if (msg['readingStatus']) readingSofar = true;
             if (msg['searchingStatus']) searchingSofar = true;
-            if ((msg['spZnlCount'] != null && msg['spZnlCount'] > 0) || !!msg['spZnlMsg']) {
-                spZnlSofar = '已发送' + msg['spZnlCount'] + '条。' + msg['spZnlMsg'];
+            if (msg['tagSearchStatus']) tagSearchSofar = true;
+            if ((msg['wbPostCount'] != null && msg['wbPostCount'] > 0) || !!msg['wbPostMsg']) {
+                wbPostSofar = '已发送' + msg['wbPostCount'] + '条。' + msg['wbPostMsg'];
             }
-            if ((msg['mpZnlCount'] != null && msg['mpZnlCount'] > 0) || !!msg['mpZnlMsg']) {
-                mpZnlSofar = '已发送' + msg['mpZnlCount'] + '条。' + msg['mpZnlMsg'];
-            }
-            // if ((msg['wqCount'] != null && msg['wqCount'] > 0) || !!msg['wqMsg']) {
-            //     wqSofar = '已发送' + msg['wqCount'] + '条。' + msg['wqMsg'];
-            // }
-
             if ((msg['repostCount'] != null && msg['repostCount'] > 0) || !!msg['repostMsg']) {
                 repostSofar = '已转发' + msg['repostCount'] + '条。' + msg['repostMsg'];
             }
@@ -94,9 +87,12 @@ $(function () {
         } else {
             $('#searchingStatus').hide();
         }
-        $('#currentSpZnl').text(spZnlSofar);
-        $('#currentMpZnl').text(mpZnlSofar);
-        //$('#currentWq').text(wqSofar);
+        if (tagSearchSofar) {
+            $('#tagSearchStatus').show();
+        } else {
+            $('#tagSearchStatus').hide();
+        }
+        $('#wbPostSofar').text(wbPostSofar);
 
         $('#currentRepost').text(repostSofar);
         $('#currentComment').text(commentSofar);
@@ -135,29 +131,40 @@ $(function () {
         } else {
             $('#searching').prop('checked', false);
         }
-        $('#spZnlInput').val(details['spZnlInput']);
-        if (details['wbContent'] === 'kuakua') {
-            $('#kuakua').prop('checked', true);
-            $('#weiquan').prop('checked', false);
-            $('#wqTag').hide();
-            $('#mpZnlTag').show();
-        } else if (details['wbContent'] === 'weiquan') {
-            $('#weiquan').prop('checked', true);
-            $('#kuakua').prop('checked', false);
-            $('#mpZnlTag').hide();
-            $('#wqTag').show();
+        if (details['tagSearch']) {
+            $('#tagSearch').prop('checked', true);
+        } else {
+            $('#tagSearch').prop('checked', false);
         }
-        $('#mpZnlInput').val(details['mpZnlInput']);
-        $('#mpZnlTag').val(details['mpZnlTag']);
-        //$('#wqInput').val(details['wqInput']);
-        $('#wqTag').val(details['wqTag']);
-
+        $('#wbPostInput').val(details['wbPostInput']);
+        $('#wbPostTag').val(details['wbPostTag']);
+        if (details['wbPostOrigin'] === 'mainPage') {
+            $('#mainPage').prop('checked', true);
+            $('#superTopic').prop('checked', false);
+        } else if (details['wbPostOrigin'] === 'superTopic') {
+            $('#mainPage').prop('checked', false);
+            $('#superTopic').prop('checked', true);
+        }
         $('#weiboUrl').val(details['weiboUrl']);
         $('#repostInput').val(details['repostInput']);
         $('#commentInput').val(details['commentInput']);
         $('#likeInput').val(details['likeInput']);
         $('#repostContent').val(details['repostContent']);
         $('#commentContent').val(details['commentContent']);
+        if (details['randomRepost']) {
+            $('#repostContent').attr('disabled', 'disabled');
+            $('#randomRepost').prop('checked', true);
+        } else {
+            $('#repostContent').removeAttr('disabled');
+            $('#randomRepost').prop('checked', false);
+        }
+        if (details['randomComment']) {
+            $('#commentContent').attr('disabled', 'disabled');
+            $('#randomComment').prop('checked', true);
+        } else {
+            $('#commentContent').removeAttr('disabled');
+            $('#randomComment').prop('checked', false);
+        }
         if (details['likeOrigin']) {
             $('#likeOrigin').prop('checked', true);
         } else {
@@ -173,34 +180,29 @@ $(function () {
         var amanComment = $('#amanComment').is(":checked");
         var reading = $('#reading').is(":checked");
         var searching = $('#searching').is(":checked");
-        var spZnlInput = $('#spZnlInput').val();
-        var wbContent = 'kuakua';
-        if ($('#weiquan').is(":checked")) {
-            wbContent = 'weiquan';
+        var tagSearch = $('#tagSearch').is(":checked");
+        var wbPostInput = $('#wbPostInput').val();
+        var wbPostTag = $('#wbPostTag').val();
+        var wbPostOrigin = 'superTopic';
+        if ($('#mainPage').is(":checked")) {
+            wbPostOrigin = 'mainPage';
         }
-        var mpZnlInput = $('#mpZnlInput').val();
-        var mpZnlTag = $('#mpZnlTag').val();
-        //var wqInput = $('#wqInput').val();
-        var wqTag = $('#wqTag').val();
-
-        spZnlInput = spZnlInput - 0;
-        mpZnlInput = mpZnlInput - 0;
-        //wqInput = wqInput - 0;
+        wbPostInput = wbPostInput - 0;
         if (spCheckIn == null) spCheckIn = true;
         if (amanComment == null) amanComment = true;
-        if (reading == null) reading = true;
-        if (searching == null) searching = true;
-        if (spZnlInput == null || isNaN(spZnlInput)) spZnlInput = 0;
-        if (mpZnlInput == null || isNaN(mpZnlInput)) mpZnlInput = 0;
-        if (mpZnlTag == null || !mpZnlTag) mpZnlTag = '';
-        //if (wqInput == null || isNaN(wqInput)) wqInput = 0;
-        if (wqTag == null || !wqTag) wqTag = '';
+        if (reading == null) reading = false;
+        if (searching == null) searching = false;
+        if (tagSearch == null) tagSearch = false;
+        if (wbPostInput == null || isNaN(wbPostInput)) wbPostInput = 0;
+        if (wbPostTag == null || !wbPostTag) wbPostTag = '';
 
         var weiboUrl = $('#weiboUrl').val();
         var repostInput = $('#repostInput').val();
         var repostContent = $('#repostContent').val();
+        var randomRepost = $('#randomRepost').is(":checked");
         var commentInput = $('#commentInput').val();
         var commentContent = $('#commentContent').val();
+        var randomComment = $('#randomComment').is(":checked");
         var likeInput = $('#likeInput').val();
         var likeOrigin = $('#likeOrigin').is(":checked");
         repostInput = repostInput - 0;
@@ -211,7 +213,9 @@ $(function () {
         if (commentInput == null || isNaN(commentInput)) commentInput = 0;
         if (likeInput == null || isNaN(likeInput)) likeInput = 0;
         if (repostContent == null || !repostContent) repostContent = '';
+        if (randomRepost == null) randomRepost = false;
         if (commentContent == null || !commentContent) commentContent = '';
+        if (randomComment == null) randomComment = false;
         if (likeOrigin == null) likeOrigin = true;
 
         chrome.runtime.sendMessage(null, {
@@ -224,18 +228,18 @@ $(function () {
                 'amanComment': amanComment,
                 'reading': reading,
                 'searching': searching,
-                'spZnlInput': spZnlInput,
-                'wbContent': wbContent,
-                'mpZnlInput': mpZnlInput,
-                'mpZnlTag': mpZnlTag,
-                //'wqInput': wqInput,
-                'wqTag': wqTag,
+                'tagSearch': tagSearch,
+                'wbPostOrigin': wbPostOrigin,
+                'wbPostInput': wbPostInput,
+                'wbPostTag': wbPostTag,
                 'weiboUrl': weiboUrl,
                 'repostInput': repostInput,
                 'commentInput': commentInput,
                 'likeInput': likeInput,
                 'repostContent': repostContent,
+                'randomRepost': randomRepost,
                 'commentContent': commentContent,
+                'randomComment': randomComment,
                 'likeOrigin': likeOrigin
             }
         }, null, function (msg) {
@@ -282,9 +286,10 @@ $(function () {
         console.log('ok');
         chrome.runtime.sendMessage(null, { 'type': 'reset', 'from': 'popup' }, null, function (msg) {
             console.log('ok response from background: ' + JSON.stringify(msg));
-            setState(msg);
             enableInputs();
             showSendbutton();
+            setView(msg['activeInput']);
+            setState(msg['activeMsg']);
         });
     }
 
@@ -363,13 +368,19 @@ $(function () {
         setInput();
     });
 
-    $("input[name='wbContent']").on('click', function () {
-        if (this.value === 'weiquan') {
-            $('#mpZnlTag').hide();
-            $('#wqTag').show();
+    $('#randomRepost').on('click', function () {
+        if ($('#randomRepost').is(":checked")) {
+            $('#repostContent').attr('disabled', 'disabled');
         } else {
-            $('#wqTag').hide();
-            $('#mpZnlTag').show();
+            $('#repostContent').removeAttr('disabled');
+        }
+    });
+
+    $('#randomComment').on('click', function () {
+        if ($('#randomComment').is(":checked")) {
+            $('#commentContent').attr('disabled', 'disabled');
+        } else {
+            $('#commentContent').removeAttr('disabled');
         }
     });
 });
