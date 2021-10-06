@@ -145,25 +145,30 @@ $(function () {
             $('#mainPage').prop('checked', false);
             $('#superTopic').prop('checked', true);
         }
-        $('#weiboUrl').val(details['weiboUrl']);
+        $('#rpWeiboUrl').val(details['rpWeiboUrl']);
+        $('#clWeiboUrl').val(details['clWeiboUrl']);
         $('#repostInput').val(details['repostInput']);
         $('#commentInput').val(details['commentInput']);
         $('#likeInput').val(details['likeInput']);
         $('#repostContent').val(details['repostContent']);
         $('#commentContent').val(details['commentContent']);
         if (details['randomRepost']) {
-            $('#repostContent').attr('disabled', 'disabled');
-            $('#randomRepost').prop('checked', true);
+            $('#rpChp').prop('checked', true);
+            $('#rpContent').prop('checked', false);
+            $('#repostContent').hide();
         } else {
-            $('#repostContent').removeAttr('disabled');
-            $('#randomRepost').prop('checked', false);
+            $('#rpChp').prop('checked', false);
+            $('#rpContent').prop('checked', true);
+            $('#repostContent').show();
         }
         if (details['randomComment']) {
-            $('#commentContent').attr('disabled', 'disabled');
-            $('#randomComment').prop('checked', true);
+            $('#cmChp').prop('checked', true);
+            $('#cmContent').prop('checked', false);
+            $('#commentContent').hide();
         } else {
-            $('#commentContent').removeAttr('disabled');
-            $('#randomComment').prop('checked', false);
+            $('#cmChp').prop('checked', false);
+            $('#cmContent').prop('checked', true);
+            $('#commentContent').show();
         }
         if (details['likeOrigin']) {
             $('#likeOrigin').prop('checked', true);
@@ -196,26 +201,34 @@ $(function () {
         if (wbPostInput == null || isNaN(wbPostInput)) wbPostInput = 0;
         if (wbPostTag == null || !wbPostTag) wbPostTag = '';
 
-        var weiboUrl = $('#weiboUrl').val();
+        var rpWeiboUrl = $('#rpWeiboUrl').val();
         var repostInput = $('#repostInput').val();
         var repostContent = $('#repostContent').val();
-        var randomRepost = $('#randomRepost').is(":checked");
+        var randomRepost = true;
+        if ($('#rpContent').is(":checked")) {
+            randomRepost = false;
+        }
+        var clWeiboUrl = $('#clWeiboUrl').val();
         var commentInput = $('#commentInput').val();
         var commentContent = $('#commentContent').val();
-        var randomComment = $('#randomComment').is(":checked");
+        var randomComment = true;
+        if ($('#cmContent').is(":checked")) {
+            randomComment = false;
+        }
         var likeInput = $('#likeInput').val();
         var likeOrigin = $('#likeOrigin').is(":checked");
         repostInput = repostInput - 0;
         commentInput = commentInput - 0;
         likeInput = likeInput - 0;
-        if (weiboUrl == null || !weiboUrl) weiboUrl = '';
+        if (rpWeiboUrl == null || !rpWeiboUrl) rpWeiboUrl = '';
         if (repostInput == null || isNaN(repostInput)) repostInput = 0;
+        if (clWeiboUrl == null || !clWeiboUrl) clWeiboUrl = '';
         if (commentInput == null || isNaN(commentInput)) commentInput = 0;
         if (likeInput == null || isNaN(likeInput)) likeInput = 0;
         if (repostContent == null || !repostContent) repostContent = '';
-        if (randomRepost == null) randomRepost = false;
+        if (randomRepost == null) randomRepost = true;
         if (commentContent == null || !commentContent) commentContent = '';
-        if (randomComment == null) randomComment = false;
+        if (randomComment == null) randomComment = true;
         if (likeOrigin == null) likeOrigin = true;
 
         chrome.runtime.sendMessage(null, {
@@ -232,8 +245,9 @@ $(function () {
                 'wbPostOrigin': wbPostOrigin,
                 'wbPostInput': wbPostInput,
                 'wbPostTag': wbPostTag,
-                'weiboUrl': weiboUrl,
+                'rpWeiboUrl': rpWeiboUrl,
                 'repostInput': repostInput,
+                'clWeiboUrl': clWeiboUrl,
                 'commentInput': commentInput,
                 'likeInput': likeInput,
                 'repostContent': repostContent,
@@ -368,19 +382,19 @@ $(function () {
         setInput();
     });
 
-    $('#randomRepost').on('click', function () {
-        if ($('#randomRepost').is(":checked")) {
-            $('#repostContent').attr('disabled', 'disabled');
+    $('[name=rpContentType]').on('change', function () {
+        if ($(this).val() == 'rpContent') {
+            $('#repostContent').show();
         } else {
-            $('#repostContent').removeAttr('disabled');
+            $('#repostContent').hide();
         }
     });
 
-    $('#randomComment').on('click', function () {
-        if ($('#randomComment').is(":checked")) {
-            $('#commentContent').attr('disabled', 'disabled');
+    $('[name=cmContentType]').on('change', function () {
+        if ($(this).val() == 'cmContent') {
+            $('#commentContent').show();
         } else {
-            $('#commentContent').removeAttr('disabled');
+            $('#commentContent').hide();
         }
     });
 });

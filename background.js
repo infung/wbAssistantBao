@@ -87,7 +87,9 @@ window.onload = function () {
             triggerSubSearching(weiboDataModes['searchingList']);
         } else if (msg['from'] == 'content' && msg['type'] == 'finishedWbPost') {
             triggerZpz();
-        } else if (msg['from'] == 'content' && msg['type'] == 'finishedZpz') {
+        } else if (msg['from'] == 'content' && msg['type'] == 'finishedRepost') {
+            triggerCommentLike();
+        } else if (msg['from'] == 'content' && msg['type'] == 'finishedCommentLike') {
             finishSending('');
         } else if (msg['from'] == 'content' && msg['type'] == 'state') {
             activeMsg = msg['activeMsg'];
@@ -166,13 +168,33 @@ function triggerWbPost() {
     }
 }
 
-function triggerZpz() {
-    if (activeInput['zpzControl']) {
-        startSendingZpz().then((result) => {
+function triggerRepost() {
+    if (activeInput['repostInput'] > 0) {
+        startSendingZpz('repost', activeInput['rpWeiboUrl']).then((result) => {
             if (!result.isSuccess) {
                 finishSending(result.msg)
             }
         });
+    } else {
+        triggerCommentLike();
+    }
+}
+
+function triggerCommentLike() {
+    if (activeInput['commentInput'] > 0 || activeInput['likeInput'] > 0) {
+        startSendingZpz('commentLike', activeInput['clWeiboUrl']).then((result) => {
+            if (!result.isSuccess) {
+                finishSending(result.msg)
+            }
+        });
+    } else {
+        finishSending('');
+    }
+}
+
+function triggerZpz() {
+    if (activeInput['zpzControl']) {
+        triggerRepost();
     } else {
         finishSending('');
     }
@@ -229,7 +251,7 @@ function startReadSearch(links) {
     });
 }
 
-function sendingZpz(resolve) {
+function sendingZpz(type, resolve) {
     setTimeout(() => {
         try {
             var result = { isSuccess: false, msg: '' };
@@ -241,7 +263,7 @@ function sendingZpz(resolve) {
                 if (byOnly && activeState !== 'finished') {
                     try {
                         chrome.tabs.sendMessage(activeTab, {
-                            'type': 'zpz',
+                            'type': type,
                             'from': 'background',
                             'repostInput': activeInput['repostInput'],
                             'commentInput': activeInput['commentInput'],
@@ -254,7 +276,6 @@ function sendingZpz(resolve) {
                             'activeMsg': activeMsg
                         }, function (msg) {
                             console.log(msg);
-                            activeState = 'running';
                             result.isSuccess = true;
                             resolve(result);
                         });
@@ -278,25 +299,26 @@ function sendingZpz(resolve) {
     }, 2000);
 }
 
-function startSendingZpz() {
+function startSendingZpz(type, weiboUrl) {
     return new Promise(resolve => {
         var result = { isSuccess: false, msg: '' };
+        activeState = 'running';
         activeControl = 'zpz';
         try {
             //navigate to weibourl
             chrome.tabs.get(activeTab, function (tab) {
                 var urlFindId = tab.url.split('?')[0];
-                if (tab.url == activeInput['weiboUrl'] || activeInput['weiboUrl'].includes(urlFindId)) {
-                    sendingZpz(resolve);
+                if (tab.url == weiboUrl || weiboUrl.includes(urlFindId)) {
+                    sendingZpz(type, resolve);
                 } else {
                     try {
-                        chrome.tabs.update(activeTab, { url: activeInput['weiboUrl'] }, function () {
+                        chrome.tabs.update(activeTab, { url: weiboUrl }, function () {
                             chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
                                 if (activeTab && tabId === activeTab && changeInfo.status == 'complete' && activeControl == 'zpz') {
-                                    console.log('sending zpz');
+                                    console.log('sending ' + type);
                                     chrome.tabs.onUpdated.removeListener(listener);
                                     //check by only
-                                    sendingZpz(resolve);
+                                    sendingZpz(type, resolve);
                                 }
                             });
                         });
@@ -332,7 +354,6 @@ function sendingWeiboData(type, resolve) {
                     'activeMsg': activeMsg
                 }, function (msg) {
                     console.log(msg);
-                    activeState = 'running';
                     result.isSuccess = true;
                     resolve(result);
                 });
@@ -347,6 +368,7 @@ function sendingWeiboData(type, resolve) {
 function startSendingWeiboData(type) {
     return new Promise(resolve => {
         var result = { isSuccess: false, msg: '' };
+        activeState = 'running';
         const url = weiboDataModes[type];
         activeControl = 'weiboData';
         activeMode = type;
@@ -381,16 +403,17 @@ function startSendingWeiboData(type) {
 
 async function startSending() {
     var result = { isSuccess: false, msg: '' };
-    if (activeInput['zpzControl'] && (activeInput['weiboUrl'] == null || !activeInput['weiboUrl'] || !activeInput['weiboUrl'].includes('weibo.com'))) {
+    if (activeInput['repostInput'] > 0 && !activeInput['rpWeiboUrl'].includes('weibo.com') ||
+        ((activeInput['commentInput'] > 0 || activeInput['likeInput'] > 0) && !activeInput['clWeiboUrl'].includes('weibo.com'))) {
         result.msg = '请输入需转评赞微博的页面链接。';
     } else {
         if (activeInput['weiboDataControl']) {
             if (activeInput['spCheckIn']) {
                 result = await startSendingWeiboData('spCheckIn');
-            } else if (activeInput['reading']) {
-                result = await startSendingWeiboData('reading');
             } else if (activeInput['amanComment']) {
                 result = await startSendingWeiboData('amanComment');
+            } else if (activeInput['reading']) {
+                result = await startSendingWeiboData('reading');
             } else if (activeInput['searching']) {
                 result = await startSendingWeiboData('searching');
             } else if (activeInput['tagSearch']) {
@@ -399,7 +422,11 @@ async function startSending() {
                 result = await startSendingWeiboData(activeInput['wbPostOrigin']);
             }
         } else {
-            result = await startSendingZpz();
+            if (activeInput['repostInput'] > 0) {
+                result = await startSendingZpz('repost', activeInput['rpWeiboUrl']);
+            } else if (activeInput['commentInput'] > 0 || activeInput['likeInput'] > 0) {
+                result = await startSendingZpz('commentLike', activeInput['clWeiboUrl']);
+            }
         }
     }
     return result;

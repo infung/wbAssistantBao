@@ -50,7 +50,7 @@
         </div>
         <div>
             <div class="tab-content">
-                <div id="weiboData" class="container tab-pane active" style="margin-top: 15px; margin-bottom: 15px;">
+                <div id="weiboData" class="container tab-pane active" style="margin-top: 15px; margin-bottom: 15.5px;">
                     <div id="sp" class="form-group">
                         <section>
                             <div class="custom-control custom-switch left" id="sw" style="display: flex; align-items: center; padding-left: 0;">
@@ -98,14 +98,14 @@
                     <hr/>
                     <div id="wbPost" class="form-group">
                         <section style="display: flex">
-                            <span class="title">微博发帖:<a href="#" data-toggle="tooltip" data-placement="?" title="输入热搜/话题tag发微博可用于增加热搜/话题讨论度，文案为彩虹屁生成器。">&#10068;</a></span>
+                            <span class="title">微博发帖:<a href="#" data-toggle="tooltip" data-placement="?" title="输入热搜/话题tag发微博可用于增加热搜/话题讨论度，文案为夸夸生成器。">&#10068;</a></span>
                             <small id="wbPostSofar" class="form-text text-muted" style="flex: 1"></small>
                         </section>
                         <section style="display:inline-flex">
                             <input id="wbPostInput" class="form-control form-control-sm" type="number" value="1" min="0" pattern="\d+"><span class="label">条</span>
                         </section>
                         <section>
-                            <input id="wbPostTag" class="form-control form-control-sm" type="text" value="#伯乐茶话会#" style="width: 100%; ">
+                            <input id="wbPostTag" class="form-control form-control-sm" type="text" value="#伯乐茶话会#🦋#伯远粉丝喜欢的就是伯远#" style="width: 100%; ">
                         </section>
                         <section style="display:inline-flex;">
                             <div class="form-check form-check-inline">
@@ -122,11 +122,10 @@
                 <div id="zpz" class="container tab-pane fade" style="margin-top: 15px; margin-bottom: 15px;">
                     <div class="form-group">
                         <section>
-                            <input id="weiboUrl" class="form-control form-control-sm" type="text" placeholder="微博链接" value="" style="width: 100%; border-color: #DCC898;">
+                            <input id="rpWeiboUrl" class="form-control form-control-sm" type="text" placeholder="转发微博链接" value="" style="width: 100%; border-color: #DCC898;">
                         </section>
                     </div>
-                    <hr/>
-                    <div id="repost" class="form-group">
+                    <div id="repost" class="form-group"  style="margin-top: 15px !important;">
                         <section style="display: flex">
                             <span class="title">转发:</span>
                             <small id="currentRepost" class="form-text text-muted" style="flex: 1"></small>
@@ -134,18 +133,27 @@
                         <section style="display:inline-flex">
                             <input id="repostInput" class="form-control form-control-sm" type="number" value="0" min="0" pattern="\d+"><span class="label">条</span>
                         </section>
-                        <section>
-                            <textarea class="form-control" id="repostContent" placeholder="转发文案" rows="1" style="width: 100%; font-size: 10px;"></textarea>
+                        <section style="display:inline-flex;">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="rpContentType" id="rpChp" value="rpChp" checked>
+                                <label class="form-check-label" for="rpChp">彩虹屁</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="rpContentType" id="rpContent" value="rpContent">
+                                <label class="form-check-label" for="rpContent">自填文案</label>
+                            </div>
                         </section>
                         <section>
-                            <label class="checkbox-container">随机彩虹屁转发
-                                <input type="checkbox" id="randomRepost">
-                                <span class="checkmark"></span>
-                            </label>
+                            <textarea class="form-control" id="repostContent" placeholder="转发文案" rows="1" style="width: 100%; font-size: 10px; display: none;"></textarea>
                         </section>
                     </div>
                     <hr/>
-                    <div id="comment" class="form-group">
+                    <div class="form-group">
+                        <section>
+                            <input id="clWeiboUrl" class="form-control form-control-sm" type="text" placeholder="评赞微博链接" value="" style="width: 100%; border-color: #DCC898;">
+                        </section>
+                    </div>
+                    <div id="comment" class="form-group" style="margin-top: 15px !important;">
                         <section style="display: flex">
                             <span class="title">评论:</span>
                             <small id="currentComment" class="form-text text-muted" style="flex: 1"></small>
@@ -153,18 +161,21 @@
                         <section style="display:inline-flex">
                             <input id="commentInput" class="form-control form-control-sm" type="number" value="0" min="0" pattern="\d+"><span class="label">条</span>
                         </section>
-                        <section>
-                            <textarea class="form-control" id="commentContent" placeholder="评论文案" rows="1" style="width: 100%; font-size: 10px;"></textarea>
+                        <section style="display:inline-flex;">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="cmContentType" id="cmChp" value="cmChp" checked>
+                                <label class="form-check-label" for="cmChp">彩虹屁</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="cmContentType" id="cmContent" value="cmContent">
+                                <label class="form-check-label" for="cmContent">自填文案</label>
+                            </div>
                         </section>
                         <section>
-                            <label class="checkbox-container">随机彩虹屁评论
-                                <input type="checkbox" id="randomComment">
-                                <span class="checkmark"></span>
-                            </label>
+                            <textarea class="form-control" id="commentContent" placeholder="评论文案" rows="1" style="width: 100%; font-size: 10px; display: none;"></textarea>
                         </section>
                     </div>
-                    <hr/>
-                    <div id="like" class="form-group">
+                    <div id="like" class="form-group" style="margin-top: 12px !important;">
                         <section style="display: flex">
                             <span class="title">点赞:</span>
                             <small id="currentLike" class="form-text text-muted" style="flex: 1"></small>

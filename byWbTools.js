@@ -58,11 +58,16 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     } else if (msg["from"] == 'background' && msg["type"] == "allForBY") {
         checkBoYuanOnly().then(sendResponse);
         return true;
-    } else if (msg["from"] == 'background' && msg["type"] == "zpz") {
+    } else if (msg["from"] == 'background' && msg["type"] == "repost") {
         running = true;
         setPriorState(msg['activeMsg']);
-        zpz(msg["repostInput"], msg["commentInput"], msg["likeInput"], msg["repostContent"], msg["randomRepost"], msg["commentContent"], msg["randomComment"], msg["likeOrigin"]);
-        sendResponse('zpz start sending');
+        repost(msg["repostInput"], msg["repostContent"], msg["randomRepost"]);
+        sendResponse('zpz repost start sending');
+    } else if (msg["from"] == 'background' && msg["type"] == "commentLike") {
+        running = true;
+        setPriorState(msg['activeMsg']);
+        commentLike(msg["commentInput"], msg["likeInput"], msg["commentContent"], msg["randomComment"], msg["likeOrigin"]);
+        sendResponse('zpz comment&like start sending');
     } else if (msg["from"] == 'background' && msg["type"] == "stopSending") {
         running = false;
         sendResponse('stop sending');
@@ -436,25 +441,28 @@ async function repostWeibo(numReposts, repostContent, randomRepost) {
     return activeMsg.repostCount;
 }
 
-async function zpz(numReposts, numComments, numLikes, repostContent, randomRepost, commentContent, randomComment, likeOrigin) {
-    //const url = chrome.runtime.getURL('content.json');
-    //const contentJson = await (await fetch(url)).json();
+async function repost(numReposts, repostContent, randomRepost) {
+    if (numReposts > 0 && running) activeMsg.repostCount = await repostWeibo(numReposts, repostContent, randomRepost);
+     if (!running) {
+        console.log('stop due to [stop button]');
+    } else {
+        running = false;
+        console.log('stop due to [finished]');
+        chrome.runtime.sendMessage({ "type": "finishedRepost", "from": "content" });
+    }
+}
 
+async function commentLike(numComments, numLikes, commentContent, randomComment, likeOrigin) {
     if (likeOrigin && running) activeMsg.likeOriginStatus = await clickOuterLike();
-    if (numReposts !== 0 && running) activeMsg.repostCount = await repostWeibo(numReposts, repostContent, randomRepost);
     if (numComments !== 0 && running) activeMsg.commentCount = await commentWeibo(numComments, commentContent, randomComment);
     if (numLikes !== 0 && running) activeMsg.likeCount = await likeWeibo(numLikes);
-    console.log('outer like: ' + activeMsg.likeOriginStatus + '; repost count: ' + activeMsg.repostCount + '; comment count: ' + activeMsg.commentCount + '; like count: ' + activeMsg.likeCount);
     if (!running) {
         console.log('stop due to [stop button]');
     } else {
         running = false;
         console.log('stop due to [finished]');
-        chrome.runtime.sendMessage({ "type": "finishedZpz", "from": "content" });
+        chrome.runtime.sendMessage({ "type": "finishedCommentLike", "from": "content" });
     }
-    //activeMsg.likeCount = 0;
-    //activeMsg.commentCount = 0;
-    //activeMsg.repostCount = 0;
     console.log('-----------------------end-----------------------');
 }
 
@@ -527,22 +535,29 @@ function amanGenerator() {
 function wbGenerator(tag) {
     var str = randomRange(4, 8);
     var phrase = (ZNL.concat(BOYUANPHRASE)).concat(RAINBOWFART);
-    if (Math.random() <= 0.5) {
+    if (Math.random() <= 0.4) {
         str = tag + '\n' + PREFIX[Math.floor(Math.random() * PREFIX.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
             TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
             '\n' + KUAKUASTART[Math.floor(Math.random() * KUAKUASTART.length)] +
             phrase[Math.floor(Math.random() * phrase.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            KUAKUAEND[Math.floor(Math.random() * KUAKUAEND.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
             '\n' + QUOTATION[Math.floor(Math.random() * QUOTATION.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-            '\n' + KUAKUAEND[Math.floor(Math.random() * KUAKUAEND.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
             '\n' + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + '我好喜欢伯远，因为' + WORDS[Math.floor(Math.random() * WORDS.length)] +
-            EMOTICION[Math.floor(Math.random() * EMOTICION.length)] + ' ' + str + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            EMOTICION[Math.floor(Math.random() * EMOTICION.length)] + ' ' + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
             '\n' + '@INTO1-伯远';
-    } else {
+    } else if (Math.random() <= 0.7) {
         str = tag + '\n' + PREFIX[Math.floor(Math.random() * PREFIX.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
             TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOTICION[Math.floor(Math.random() * EMOTICION.length)] +
             '\n' + phrase[Math.floor(Math.random() * phrase.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
             '\n' + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + '伯丝爱伯远，理由是' + WORDS[Math.floor(Math.random() * WORDS.length)] +
             EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + '@INTO1-伯远';
+    } else {
+        str = tag + '\n' + PREFIX[Math.floor(Math.random() * PREFIX.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + phrase[Math.floor(Math.random() * phrase.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            '\n' + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + '伯远粉丝喜欢的是' + WORDS[Math.floor(Math.random() * WORDS.length)] +
+            EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOTICION[Math.floor(Math.random() * EMOTICION.length)] +
             '\n' + '@INTO1-伯远';
     }
     return str;
