@@ -179,7 +179,7 @@ function postWeibo(content, wbPostOrigin) {
                 if (this.status == 200) {
                     var data = JSON.parse(this.responseText);
                     if (data.code == '100000') {
-                        console.log('【正能量】：' + content);
+                        console.log('【微博】：' + content);
                     } else {
                         console.log(data);
 
@@ -421,7 +421,7 @@ async function repostWeibo(numReposts, repostContent, randomRepost) {
     var rstr = '';
     while (running && activeMsg.repostCount < numReposts) {
         if (randomRepost) {
-            rstr = kuakuaGenerator();
+            rstr = kuakuaGenerator() + originContent;
         } else {
             rstr = repostContent + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + originContent;
         }

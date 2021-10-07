@@ -1,8 +1,8 @@
 {
     "name": "小秘书·饱",
     "manifest_version": 2,
-    "version": "1.6.2",
-    "description": "1.日常数据（包括超话签到，阅读，艾漫盖楼，艾漫搜索，艾漫发帖和主页发原创贴）。2.转评赞",
+    "version": "1.6.3",
+    "description": "1.微博数据（包括超话签到，艾漫盖楼，阅读，词条净化，社影搜索，发微博）。2.转评赞",
     "browser_action": {
         "default_icon": "by-16.png",
         "default_popup": "popup.html",
