@@ -194,7 +194,7 @@ $(function () {
         }
         wbPostInput = wbPostInput - 0;
         if (spCheckIn == null) spCheckIn = true;
-        if (amanComment == null) amanComment = true;
+        if (amanComment == null) amanComment = false;
         if (reading == null) reading = false;
         if (searching == null) searching = false;
         if (tagSearch == null) tagSearch = false;

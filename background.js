@@ -38,7 +38,7 @@ const weiboDataModes = {
     'mainPage': 'https://weibo.com',
     'superTopic': 'https://weibo.com/p/100808cd19f50b7e758a497f78651157aecdc5/super_index'
 }
-var activeMode = 'spCheckIn';
+
 var activeControl = 'weiboData';
 var activeState = 'ready';
 var activeTab = null;
@@ -67,7 +67,6 @@ window.onload = function () {
             return true;
         } else if (msg['from'] == 'popup' && msg['type'] == 'reset') {
             activeMsg = {};
-            activeMode = 'spCheckIn';
             activeControl = 'weiboData';
             activeState = 'ready';
             activeTab = null;
@@ -371,7 +370,6 @@ function startSendingWeiboData(type) {
         activeState = 'running';
         const url = weiboDataModes[type];
         activeControl = 'weiboData';
-        activeMode = type;
         try {
             //navigate to supertopic
             chrome.tabs.get(activeTab, function (tab) {
@@ -381,7 +379,7 @@ function startSendingWeiboData(type) {
                     try {
                         chrome.tabs.update(activeTab, { url: url }, function () {
                             chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
-                                if (activeTab && tabId === activeTab && changeInfo.status == 'complete' && activeMode == type) {
+                                if (activeTab && tabId === activeTab && changeInfo.status == 'complete') {
                                     console.log('sending ' + type);
                                     chrome.tabs.onUpdated.removeListener(listener);
                                     sendingWeiboData(type, resolve);

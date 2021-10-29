@@ -480,28 +480,13 @@ function randomRange(min, max) {
 function kuakuaGenerator() {
     var str = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
     if (Math.random() <= 0.5) {
-        str += RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-            ' @INTO1-伯远';
+        str += RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
     } else {
-        str += KUAKUASTART[Math.floor(Math.random() * KUAKUASTART.length)] + RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] +
-            KUAKUAEND[Math.floor(Math.random() * KUAKUAEND.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-            ' @INTO1-伯远';
+        str += RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            KUAKUAEND[Math.floor(Math.random() * KUAKUAEND.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
     }
     return str;
 
-}
-
-function commentGenerator() {
-    var str = randomRange(4, 8);
-    str = WORDS[Math.floor(Math.random() * WORDS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        WORDS[Math.floor(Math.random() * WORDS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        WORDS[Math.floor(Math.random() * WORDS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        TEXTS[Math.floor(Math.random() * TEXTS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-        str + ' @INTO1-伯远';
-    return str;
 }
 
 function amanGenerator() {
