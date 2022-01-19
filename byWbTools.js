@@ -1,6 +1,8 @@
+// 本插件为拥有著作权的非开源代码
 const VICESUPERTOPIC = "https://weibo.com/p/100808cd19f50b7e758a497f78651157aecdc5/super_index";
 const BUSYTEXTS = ['休息一会', '验证码', '频繁', '繁忙', '提交失败', 'Cannot do this operation'];
 const WBAUTHORS = ['INTO1官博', '哇唧唧哇'];
+const NOBODYCARES = ['@INTO1-尹浩宇', '@INTO1-高卿尘', '@INTO1-米卡', '@INTO1-刘宇', '@INTO1-力丸', '@INTO1-林墨', '@INTO1-周柯宇', '@INTO1-张嘉元'];
 
 var activeMsg = {
     spCheckInStatus: false,
@@ -19,7 +21,13 @@ var activeMsg = {
     likeOriginStatus: ''
 }
 
+var activeCcMsg = {
+    commentControlCount: 0,
+    commentControlMsg: '',
+}
+
 var running = false;
+var ccrunning = false;
 
 console.log('小饱狗勾准备就绪~ ฅ՞•ﻌ•՞ฅ');
 
@@ -66,10 +74,18 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     } else if (msg["from"] == 'background' && msg["type"] == "commentLike") {
         running = true;
         setPriorState(msg['activeMsg']);
-        commentLike(msg["commentInput"], msg["likeInput"], msg["commentContent"], msg["randomComment"], msg["likeOrigin"]);
+        commentLike(msg["commentInput"], msg["likeInput"], msg["lzl"], msg["commentContent"], msg["randomComment"], msg["likeOrigin"]);
         sendResponse('zpz comment&like start sending');
+    } else if (msg["from"] == 'background' && msg["type"] == "commentControl") {
+        ccrunning = true;
+        commentControl(msg["commentControlInput"], msg["ccPostiveTags"], msg["ccNegativeTags"], msg["nz"]);
+        sendResponse('commentControl start sending');
     } else if (msg["from"] == 'background' && msg["type"] == "stopSending") {
-        running = false;
+        if (msg["mode"] == "normal") {
+            running = false;
+        } else {
+            ccrunning = false;     
+        }
         sendResponse('stop sending');
     }
 });
@@ -82,11 +98,11 @@ function getElementsByXPath(xpathToExecute) {
     return document.evaluate(xpathToExecute, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 }
 
-function waitElementPresent(path) {
+function waitElementPresent(path, size) {
     return new Promise(resolve => {
         var checkExist = setInterval(async () => {
             var element = await getElementsByXPath(path);
-            if (element.snapshotLength > 0) {
+            if (element.snapshotLength >= size) {
                 console.log("element found!");
                 clearInterval(checkExist);
                 resolve();
@@ -97,14 +113,14 @@ function waitElementPresent(path) {
 
 async function checkBoYuanOnly() {
     var boyuanFlag = false;
-    await waitElementPresent('//div[@class="WB_detail"]');
+    await waitElementPresent('//div[@class="WB_detail"]', 1);
     var wbContent = (await getElementsByXPath('//div[@class="WB_detail"]')).snapshotItem(0);
     var wbInfoList = await getElementsByXPath('//div[@class="WB_info"]/a');
     var wbInfoLen = wbInfoList.snapshotLength;
     for (var i = 0; i < wbInfoLen; i++) {
         //case 0: x_x
-        if (wbContent.textContent.indexOf('老伯') !== -1 || wbInfoList.snapshotItem(i).text === '@INTO1-刘宇') {
-            alert('WHAT THE HECK!');
+        if (wbContent.textContent.indexOf('老伯') !== -1 || NOBODYCARES.indexOf(wbInfoList.snapshotItem(i).text) > -1 ) {
+            alert('小偷!你担必糊!');
             break;
         }
         //case 1: boyuan's weibo or the weibo that reposted boyuan's weibo 
@@ -205,6 +221,7 @@ function sendState() {
         chrome.runtime.sendMessage({
             "type": "state",
             "from": "content",
+            "mode": "normal",
             "activeMsg": activeMsg
         });
     } catch (e) {
@@ -278,7 +295,7 @@ function scrollToBottom(path) {
 }
 
 async function clickOuterLike() {
-    await waitElementPresent('//a[@class="S_txt2" and @action-type="fl_like"]');
+    await waitElementPresent('//a[@class="S_txt2" and @action-type="fl_like"]', 1);
     var outerLikeState = (await getElementsByXPath('//a[@class="S_txt2" and @action-type="fl_like"]')).snapshotItem(0);
     var outerLike = (await getElementsByXPath('//span[@node-type="like_status"]')).snapshotItem(0);
     if (outerLikeState.title === '赞') {
@@ -313,13 +330,20 @@ async function clickLike(numOfLike) {
     return response;
 }
 
+async function innerLikes() {
+    var innerCommentsButtons = await getElementsByXPath('//a[@action-type="click_more_child_comment_big"]');
+    innerCommentsButtons.snapshotItem(0).click();
+    await sleep(1500);
+}
+
 async function likeWeibo(numLikes) {
-    await waitElementPresent('//a[@class="S_txt2" and @action-type="fl_comment"]');
+    await waitElementPresent('//a[@class="S_txt2" and @action-type="fl_comment"]', 1);
     var commentButton = await getElementsByXPath('//a[@class="S_txt2" and @action-type="fl_comment"]');
     commentButton.snapshotItem(0).click();
     await sleep(1000);
 
     var response = null;
+    var innerLikeTurn = false;
     while (running) {
         response = await clickLike(numLikes);
         console.log('已点赞：' + activeMsg.likeCount);
@@ -332,19 +356,38 @@ async function likeWeibo(numLikes) {
                 await sleep(2000);
             }*/
             break;
+        } else if (innerLikeTurn) {
+            await innerLikes();
+            innerLikeTurn = false;
         } else {
+            innerLikeTurn = true;
             var clickMoreCommentButtonPath = '//a[@action-type="click_more_comment"]';
             await scrollToBottom(clickMoreCommentButtonPath);
             await sleep(1000);
             var clickMoreCommentButton = await getElementsByXPath(clickMoreCommentButtonPath);
-            if (clickMoreCommentButton.snapshotLength === 0) {
-                break;
+            if (clickMoreCommentButton.snapshotLength !== 0) {
+                clickMoreCommentButton.snapshotItem(0).click();
+                await sleep(1000);
             }
-            clickMoreCommentButton.snapshotItem(0).click();
-            await sleep(1000);
         }
     }
     return activeMsg.likeCount;
+}
+
+async function innerCommentWeibo(content) {
+    var replyButton = (await getElementsByXPath('//a[@action-type="reply"]')).snapshotItem(0);
+    replyButton.click();
+    await sleep(1000);
+    await waitElementPresent('//div[@class="p_input"]/textarea', 2);
+    var inputBox = (await getElementsByXPath('//div[@class="p_input"]/textarea')).snapshotItem(1);
+    inputBox.value = content;
+    inputBox.dispatchEvent(new Event('change'));
+    await sleep(1000);
+    var postButton = (await getElementsByXPath('//a[@node-type="btnText" and @action-type="doReply"]')).snapshotItem(0);
+    postButton.click();
+    await sleep(3000);
+    var repsonse = await handlePopup();
+    return repsonse;
 }
 
 async function commentWeiboWithoutMid(content) {
@@ -359,21 +402,27 @@ async function commentWeiboWithoutMid(content) {
     return repsonse;
 }
 
-async function commentWeibo(numComments, commentContent, randomComment) {
-    await waitElementPresent('//a[@class="S_txt2" and @action-type="fl_comment"]');
+async function commentWeibo(numComments, lzl, commentContent, randomComment) {
+    await waitElementPresent('//a[@class="S_txt2" and @action-type="fl_comment"]', 1);
     var commentButton = await getElementsByXPath('//a[@class="S_txt2" and @action-type="fl_comment"]');
     commentButton.snapshotItem(0).click();
     await sleep(1000);
 
     var cstr = '';
     var response = null;
+    var firstComment = true;
     while (running && activeMsg.commentCount < numComments) {
         if (randomComment) {
             cstr = kuakuaGenerator();
         } else {
             cstr = commentContent + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
         }
-        response = await commentWeiboWithoutMid(cstr);
+        if (firstComment || !lzl) {
+            response = await commentWeiboWithoutMid(cstr);
+            firstComment = false;
+        } else {
+            response = await innerCommentWeibo(cstr);
+        }
         if (response.code === '100000') activeMsg.commentCount++;
         console.log('已评论：' + activeMsg.commentCount);
         activeMsg.commentMsg = response.msg;
@@ -402,14 +451,14 @@ async function reposetWeiboWithoutMid(content) {
 }
 
 async function repostWeibo(numReposts, repostContent, randomRepost) {
-    await waitElementPresent('//a[@action-type="fl_forward"]');
+    await waitElementPresent('//a[@action-type="fl_forward"]', 1);
     var commentButton = await getElementsByXPath('//a[@action-type="fl_forward"]');
     commentButton.snapshotItem(0).click();
     await sleep(1000);
 
     //obtain re-repost text content
     var rstr = '';
-    await waitElementPresent('//div[@class="p_input p_textarea"]/textarea');
+    await waitElementPresent('//div[@class="p_input p_textarea"]/textarea', 1);
     var originContent = (await getElementsByXPath('//div[@class="p_input p_textarea"]/textarea')).snapshotItem(0).value;
     if (originContent.lastIndexOf('//', 0) !== 0) originContent = '';
     //trim repost text content
@@ -452,9 +501,9 @@ async function repost(numReposts, repostContent, randomRepost) {
     }
 }
 
-async function commentLike(numComments, numLikes, commentContent, randomComment, likeOrigin) {
+async function commentLike(numComments, numLikes, lzl, commentContent, randomComment, likeOrigin) {
     if (likeOrigin && running) activeMsg.likeOriginStatus = await clickOuterLike();
-    if (numComments !== 0 && running) activeMsg.commentCount = await commentWeibo(numComments, commentContent, randomComment);
+    if (numComments !== 0 && running) activeMsg.commentCount = await commentWeibo(numComments, lzl, commentContent, randomComment);
     if (numLikes !== 0 && running) activeMsg.likeCount = await likeWeibo(numLikes);
     if (!running) {
         console.log('stop due to [stop button]');
@@ -478,12 +527,14 @@ function randomRange(min, max) {
 }
 
 function kuakuaGenerator() {
-    var str = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+    var str = '';
     if (Math.random() <= 0.5) {
-        str += RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+        str = RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + 
+            EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
     } else {
-        str += RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
-            KUAKUAEND[Math.floor(Math.random() * KUAKUAEND.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+        str = RAINBOWFART[Math.floor(Math.random() * RAINBOWFART.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] +
+            KUAKUAEND[Math.floor(Math.random() * KUAKUAEND.length)] + EMOJIS[Math.floor(Math.random() * EMOJIS.length)] + 
+            EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
     }
     return str;
 
@@ -615,7 +666,7 @@ async function reading() {
         await sleep(1000);
 
         var wbsPath = '//div[@class="WB_detail"]';
-        await waitElementPresent(wbsPath);
+        await waitElementPresent(wbsPath, 1);
         var wbs = await getElementsByXPath(wbsPath);
         var wbsLen = wbs.snapshotLength;
         for (var i = 0; i < wbsLen; i++) {
@@ -677,7 +728,7 @@ function clickUntilSuccess(button) {
 
 async function spCheckIn() {
     var followInfoPath = '//div[@node-type="followBtnBox"]';
-    await waitElementPresent(followInfoPath);
+    await waitElementPresent(followInfoPath, 1);
     var followInfo = (await getElementsByXPath(followInfoPath)).snapshotItem(0);
     if (running && followInfo.textContent.indexOf('已关注') === -1) {
         console.log("未关注超话，准备关注。");
@@ -690,7 +741,7 @@ async function spCheckIn() {
     console.log("已关注!");
     //wait
     var checkinButtonPath = '//a[@action-type="widget_take"]';
-    await waitElementPresent(checkinButtonPath);
+    await waitElementPresent(checkinButtonPath, 1);
     var checkinButton = (await getElementsByXPath(checkinButtonPath)).snapshotItem(0);
     if (running && checkinButton.textContent.indexOf('已签到') === -1) {
         console.log("未签到，准备签到。");
@@ -755,7 +806,7 @@ async function amanComment() {
         if (running && commentButton !== null) {
             commentButton.click();
             await sleep(1000);
-            await waitElementPresent('//div[@class="WB_publish"]');
+            await waitElementPresent('//div[@class="WB_publish"]', 1);
             var amanStr = amanGenerator();
             var response = await commentWeiboWithoutMid(amanStr);
             await sleep(1000);
@@ -769,5 +820,109 @@ async function amanComment() {
         running = false;
         console.log('stop due to [finished]');
         chrome.runtime.sendMessage({ "type": "finishedAmanComment", "from": "content" });
+    }
+}
+
+// comment control
+
+function sendCcState() {
+    try {
+        chrome.runtime.sendMessage({
+            "type": "state",
+            "from": "content",
+            "mode": "commentControl",
+            "activeCcMsg": activeCcMsg
+        });
+    } catch (e) {
+        console.log(e);
+    }
+}
+
+async function clickTargetLike(numOfLike, lstPermitWords, lstForbidWords, clickInnerLike) {
+    console.log('filter and click');
+    var commentCotents = await getElementsByXPath('//div[@class="list_con" and @node-type="replywrap"]/div[@class="WB_text"][1]');
+    var commentLikes = await getElementsByXPath('//div[@class="list_con" and @node-type="replywrap"]/div[@class="WB_func clearfix"]//a[@class="S_txt1" and @action-type="fl_like"]');
+    var numComments = commentCotents.snapshotLength;
+    var currComment = null;
+    var targetComment = false;
+    var targetLike = null;
+    var response = { 'code': '100000', 'msg': '' };
+    for (var i = 0; i < numComments; i++) {
+        currComment = commentCotents.snapshotItem(i).textContent;
+        currComment = currComment.substring(currComment.indexOf('：'));
+        targetComment = lstPermitWords.some((text) => currComment.indexOf(text) !== -1);
+        targetComment = targetComment && !(lstForbidWords.some((text) => currComment.indexOf(text) !== -1));
+        if (targetComment) {
+            targetLike = commentLikes.snapshotItem(i);
+            if (targetLike.title === '赞') {
+                targetLike.click();
+                activeCcMsg.commentControlCount++;
+                await sleep(1000);
+                response = await handlePopup();
+                activeCcMsg.commentControlMsg= response.msg;
+                sendCcState();
+                //for like popup, kill the process immediately without waiting for animation, since it's the final round.
+                if (!ccrunning || activeCcMsg.commentControlCount >= numOfLike || response.code !== '100000') break;
+            }
+        }
+    }
+    return response;
+}
+
+async function clickInnerLike() {
+    var innerCommentsButtons = await getElementsByXPath('//a[@action-type="click_more_child_comment_big"]');
+    innerCommentsButtons.snapshotItem(0).click();
+    await sleep(1500);
+}
+
+async function likeWeiboWithRules(numLikes, lstPermitWords, lstForbidWords, clickInnerLike) {
+    await waitElementPresent('//a[@class="S_txt2" and @action-type="fl_comment"]', 1);
+    var commentButton = await getElementsByXPath('//a[@class="S_txt2" and @action-type="fl_comment"]');
+    commentButton.snapshotItem(0).click();
+    await sleep(1000);
+
+    // sort by polpularity
+    var sortButton = await getElementsByXPath('//a[@class="S_txt1 " and @action-type="search_type"]');
+    if (sortButton.snapshotLength > 0) {
+        sortButton.snapshotItem(0).click();
+        await sleep(1000);
+    }
+
+    console.log('ready to click like');
+
+    var response = null;
+    while (ccrunning) {
+        response = await clickTargetLike(numLikes, lstPermitWords, lstForbidWords, clickInnerLike);
+        console.log('已点赞：' + activeCcMsg.commentControlCount);
+        if (!ccrunning || activeCcMsg.commentControlCount >= numLikes) {
+            break;
+        } else if (response.code !== '100000') {
+            break;
+        } else {
+            var clickMoreCommentButtonPath = '//a[@action-type="click_more_comment"]';
+            await scrollToBottom(clickMoreCommentButtonPath);
+            await sleep(1000);
+            var clickMoreCommentButton = await getElementsByXPath(clickMoreCommentButtonPath);
+            if (clickMoreCommentButton.snapshotLength !== 0) {
+                clickMoreCommentButton.snapshotItem(0).click();
+                await sleep(1000);
+            }
+        }
+    }
+    return activeCcMsg.commentControlCount;
+}
+
+async function commentControl(numLikes, permitWords, forbidWords, clickInnerLike) {
+    console.log('commentControl starts');
+    var lstPermitWords = ['伯远'];
+    lstPermitWords = lstPermitWords.concat(permitWords.split(' '));
+    var lstForbidWords = forbidWords.split(' ');
+    if (numLikes !== 0 && ccrunning) activeCcMsg.commentControlCount = await likeWeiboWithRules(numLikes, lstPermitWords, lstForbidWords, clickInnerLike);
+    if (!ccrunning) {
+        console.log('stop due to [stop button]');
+    } else {
+        ccrunning = false;
+        console.log('stop due to [finished]');
+        chrome.runtime.sendMessage({ "type": "finishedCommentControl", "from": "content" });
     }
 }

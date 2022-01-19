@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-
+<!-- 本插件为拥有著作权的非开源代码 -->
 <head>
     <title>大秘书·饱</title>
     <link rel="stylesheet" type="text/css" href="main.css">
@@ -13,7 +13,8 @@
     <div class="content">
         <div>
             <header>
-                <svg width="20" height="20" style="vertical-align: text-bottom !important; color: #DCC898" data-prefix="fas" data-icon="dog" class="svg-inline--fa fa-dog fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="currentColor" d="M298.06,224,448,277.55V496a16,16,0,0,1-16,16H368a16,16,0,0,1-16-16V384H192V496a16,16,0,0,1-16,16H112a16,16,0,0,1-16-16V282.09C58.84,268.84,32,233.66,32,192a32,32,0,0,1,64,0,32.06,32.06,0,0,0,32,32ZM544,112v32a64,64,0,0,1-64,64H448v35.58L320,197.87V48c0-14.25,17.22-21.39,27.31-11.31L374.59,64h53.63c10.91,0,23.75,7.92,28.62,17.69L464,96h64A16,16,0,0,1,544,112Zm-112,0a16,16,0,1,0-16,16A16,16,0,0,0,432,112Z"></path></svg>                大秘书·饱
+                <img width="20" height="20" src="../image/logo.png" alt="logo">
+                小菜狗·饱
             </header>
             <hr style="background-color: rgba(240, 255, 240, 0.192); width: 75px;" />
             <div class="tab">
@@ -22,7 +23,10 @@
                         <a class="nav-link active" data-toggle="pill" href="#weiboData">微博数据</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="pill" href="#zpz">转评赞</a>
+                        <a class="nav-link" data-toggle="pill" href="#loopRepost">轮博</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="pill" href="#loopCommentLike">赞评</a>
                     </li>
                 </ul>
             </div>
@@ -35,14 +39,20 @@
                         </label>
                     </section>
                     <section>
-                        <label class="checkbox-container">转评赞
-                            <input type="checkbox" id="zpzControl" checked="checked" >
+                        <label class="checkbox-container">轮博
+                            <input type="checkbox" id="loopRepostControl" checked="checked" >
+                            <span class="checkmark"></span>
+                        </label>
+                    </section>
+                    <section>
+                        <label class="checkbox-container">评赞
+                            <input type="checkbox" id="loopCommentLikeControl" checked="checked" >
                             <span class="checkmark"></span>
                         </label>
                     </section>
                 </div>
                 <div id="controlbutton">
-                    <button id="sendbutton" class="btn btn-primary">发送</button>
+                    <button id="sendbutton" class="btn btn-primary">运行</button>
                     <button id="stopbutton" class="btn btn-danger">停止</button>
                     <button id="okbutton" class="btn btn-success">完成</button>
                 </div>
@@ -50,7 +60,7 @@
         </div>
         <div>
             <div class="tab-content">
-                <div id="weiboData" class="container tab-pane active" style="margin-top: 15px; margin-bottom: 15.5px;">
+                <div id="weiboData" class="container tab-pane active" style="margin-top: 15px; margin-bottom: 15px;">
                     <div id="sp" class="form-group">
                         <section>
                             <div class="custom-control custom-switch left" id="sw" style="display: flex; align-items: center; padding-left: 0;">
@@ -119,12 +129,13 @@
                         </section>
                     </div>
                 </div>
-                <div id="zpz" class="container tab-pane fade" style="margin-top: 15px; margin-bottom: 15px;">
+                <div id="loopRepost" class="container tab-pane fade" style="margin-top: 15px; margin-bottom: 35px;">
                     <div class="form-group">
                         <section>
                             <input id="rpWeiboUrl" class="form-control form-control-sm" type="text" placeholder="转发微博链接" value="" style="width: 100%; border-color: #DCC898;">
                         </section>
                     </div>
+                    <hr/>
                     <div id="repost" class="form-group"  style="margin-top: 15px !important;">
                         <section style="display: flex">
                             <span class="title">转发:</span>
@@ -150,9 +161,17 @@
                     <hr/>
                     <div class="form-group">
                         <section>
+                            <img height="150" src="../image/puppy2.png" alt="puppy2">
+                        </section>
+                    </div>
+                </div>
+                <div id="loopCommentLike" class="container tab-pane fade" style="margin-top: 15px; margin-bottom: 11px;">
+                    <div class="form-group">
+                        <section>
                             <input id="clWeiboUrl" class="form-control form-control-sm" type="text" placeholder="评赞微博链接" value="" style="width: 100%; border-color: #DCC898;">
                         </section>
                     </div>
+                    <hr/>
                     <div id="comment" class="form-group" style="margin-top: 15px !important;">
                         <section style="display: flex">
                             <span class="title">评论:</span>
@@ -160,6 +179,12 @@
                         </section>
                         <section style="display:inline-flex">
                             <input id="commentInput" class="form-control form-control-sm" type="number" value="0" min="0" pattern="\d+"><span class="label">条</span>
+                            <div style="padding-left: 10px; padding-top:4px;">
+                                <label class="checkbox-container">楼中楼
+                                    <input type="checkbox" id="lzl" checked="checked">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
                         </section>
                         <section style="display:inline-flex;">
                             <div class="form-check form-check-inline">
@@ -175,6 +200,7 @@
                             <textarea class="form-control" id="commentContent" placeholder="评论文案" rows="1" style="width: 100%; font-size: 10px; display: none;"></textarea>
                         </section>
                     </div>
+                    <hr/>
                     <div id="like" class="form-group" style="margin-top: 12px !important;">
                         <section style="display: flex">
                             <span class="title">点赞:</span>
@@ -190,13 +216,67 @@
                             </label>
                         </section>
                     </div>
+                    <div class="form-group" >
+                        <section style="display:inline-flex; margin-left: -13px;">
+                            <img height="75" src="../image/puppy3.png" alt="puppy1">
+                            <img height="75" src="../image/puppy1.png" alt="puppy1">
+                        </section>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div id="overlay"></div>
+    <div class="content-commentControl" id="commentControl">
+        <div style="margin: 30px;">
+            <div class="form-group">
+                <section>
+                    <input id="ccWeiboUrl" class="form-control form-control-sm" type="text" placeholder="控评微博链接" value="" style="width: 100%; border-color: #DCC898;">
+                </section>
+                <hr/>
+            </div>
+            <div class="form-group">
+                <section style="display: flex">
+                    <span style="font-weight: bold;">微博控评:
+                        <small id="commentControlSofar" class="form-text text-muted" style="flex: 1; font-size: 8px;"></small>
+                    </span>
+                </section>
+                <section style="display:inline-flex;">
+                    <input id="commentControlInput" class="form-control form-control-sm" type="number" value="10" min="0" pattern="\d+" style="width: 25%;"><span class="label">条</span>
+                    <div style="padding-left: 10px; padding-top:3px;">
+                        <label class="checkbox-container">内赞
+                            <input type="checkbox" id="nz" checked="checked">
+                            <span class="checkmark"></span>
+                        </label>
+                    </div>
+                </section>
+                <section style="margin-top: 16px;">
+                    <span class="title">快赞关键词:</span>
+                </section>
+                <section style="display:inline-flex">
+                    <input id="ccPostiveTagFixed" class="form-control form-control-sm" type="text" value="伯远" style="width: 25%;" disabled="disabled">
+                    <input id="ccPostiveTags" class="form-control form-control-sm" type="text" value="" placeholder="多个关键词以空格分隔" style="width: 75%; margin-left: 10px;">
+                </section>
+                <section style="margin-top: 16px;">
+                    <span class="title">屏蔽关键词:</span>
+                </section>
+                <section>
+                    <input id="ccNegativeTags" class="form-control form-control-sm" type="text" value="刘彰 ak 周柯宇 尹浩宇 张嘉元 林墨 高卿尘 小九 米卡 力丸 赞多 刘宇" placeholder="多个关键词以空格分隔" style="width: 100%; ">
+                </section>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; margin-top: 30px;">
+                <button class="btn-primary" id="ccstartbutton" style="width: 160px;">开始</button>
+                <button class="btn-danger" id="ccstopbutton" style="width: 160px; display: none;">停止</button>
+                <button class="btn-success" id="ccokbutton" style="width: 160px; display: none;">完成</button>
             </div>
         </div>
     </div>
     <footer>
         <span class="light">*运行前请确保微博账号已在此浏览器上登录，并在旧版微博上使用。</span>
     </footer>
+    <div>
+        <button class="btn-dark" id="modeswitch">控评模式 🔼</button>
+    </div>
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/popper.min.js"></script>
     <script type="text/javascript" src="main.js"></script>

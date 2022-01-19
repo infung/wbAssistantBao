@@ -1,7 +1,7 @@
 {
     "name": "小秘书·饱",
     "manifest_version": 2,
-    "version": "1.6.4",
+    "version": "1.7.3",
     "description": "1.微博数据（包括超话签到，微博阅读，词条净化，社影搜索，发微博）。2.转评赞",
     "browser_action": {
         "default_icon": "by-16.png",

@@ -4,6 +4,54 @@ $(function () {
             disableButtons();
         }
     });*/
+    disableInputs = function () {
+        $("input").each(function () {
+            $(this).attr('disabled', 'disabled');
+        });
+        $("textarea").each(function () {
+            $(this).attr('disabled', 'disabled');
+        });
+    };
+    enableInputs = function () {
+        $("input").each(function () {
+            if ($(this).attr('id') !== 'ccPostiveTagFixed') {
+                $(this).removeAttr('disabled');
+            }
+        });
+        $("textarea").each(function () {
+            $(this).removeAttr('disabled');
+        });
+    }
+    displayWeiboData = function () {
+        $('a[href$="#weiboData"]').addClass('active');
+        $('#weiboData').addClass('active');
+        $('#weiboData').removeClass('fade');
+    };
+    concealWeiboData = function() {
+        $('a[href$="#weiboData"]').removeClass('active');
+        $('#weiboData').addClass('fade');
+        $('#weiboData').removeClass('active');
+    }
+    displayRepost = function () {
+        $('a[href$="#loopRepost"]').addClass('active');
+        $('#loopRepost').addClass('active');
+        $('#loopRepost').removeClass('fade');
+    };
+    concealRepost = function() {
+        $('a[href$="#loopRepost"]').removeClass('active');
+        $('#loopRepost').addClass('fade');
+        $('#loopRepost').removeClass('active');
+    }
+    displayCommentLike = function () {
+        $('a[href$="#loopCommentLike"]').addClass('active');
+        $('#loopCommentLike').addClass('active');
+        $('#loopCommentLike').removeClass('fade');
+    };
+    concealCommentLike = function() {
+        $('a[href$="#loopCommentLike"]').removeClass('active');
+        $('#loopCommentLike').addClass('fade');
+        $('#loopCommentLike').removeClass('active');
+    }
     showSendbutton = function () {
         $('#sendbutton').show();
         $('#stopbutton').hide();
@@ -19,22 +67,6 @@ $(function () {
         $('#sendbutton').hide();
         $('#stopbutton').hide();
     };
-    disableInputs = function () {
-        $("input").each(function () {
-            $(this).attr('disabled', 'disabled');
-        });
-        $("textarea").each(function () {
-            $(this).attr('disabled', 'disabled');
-        });
-    };
-    enableInputs = function () {
-        $("input").each(function () {
-            $(this).removeAttr('disabled');
-        });
-        $("textarea").each(function () {
-            $(this).removeAttr('disabled');
-        });
-    }
     setState = function (msg) {
         var spCheckInSofar = false;
         var amanCommentSofar = false;
@@ -104,11 +136,15 @@ $(function () {
         } else {
             $('#weiboDataControl').prop('checked', false);
         }
-
-        if (details['zpzControl']) {
-            $('#zpzControl').prop('checked', true);
+        if (details['loopRepostControl']) {
+            $('#loopRepostControl').prop('checked', true);
         } else {
-            $('#zpzControl').prop('checked', false);
+            $('#loopRepostControl').prop('checked', false);
+        }
+        if (details['loopCommentLikeControl']) {
+            $('#loopCommentLikeControl').prop('checked', true);
+        } else {
+            $('#loopCommentLikeControl').prop('checked', false);
         }
 
         if (details['spCheckIn']) {
@@ -170,6 +206,11 @@ $(function () {
             $('#cmContent').prop('checked', true);
             $('#commentContent').show();
         }
+        if (details['lzl']) {
+            $('#lzl').prop('checked', true);
+        } else {
+            $('#lzl').prop('checked', false);
+        }
         if (details['likeOrigin']) {
             $('#likeOrigin').prop('checked', true);
         } else {
@@ -179,7 +220,8 @@ $(function () {
 
     setInput = function () {
         var weiboDataControl = $('#weiboDataControl').is(":checked");
-        var zpzControl = $('#zpzControl').is(":checked");
+        var loopRepostControl = $('#loopRepostControl').is(":checked");
+        var loopCommentLikeControl = $('#loopCommentLikeControl').is(":checked");
 
         var spCheckIn = $('#spCheckIn').is(":checked");
         var amanComment = $('#amanComment').is(":checked");
@@ -211,6 +253,7 @@ $(function () {
         var clWeiboUrl = $('#clWeiboUrl').val();
         var commentInput = $('#commentInput').val();
         var commentContent = $('#commentContent').val();
+        var lzl = $('#lzl').is(":checked");
         var randomComment = true;
         if ($('#cmContent').is(":checked")) {
             randomComment = false;
@@ -228,15 +271,18 @@ $(function () {
         if (repostContent == null || !repostContent) repostContent = '';
         if (randomRepost == null) randomRepost = true;
         if (commentContent == null || !commentContent) commentContent = '';
+        if (lzl == null) lzl = true;
         if (randomComment == null) randomComment = true;
         if (likeOrigin == null) likeOrigin = true;
 
         chrome.runtime.sendMessage(null, {
             'type': 'input',
             'from': 'popup',
+            'mode': 'normal',
             'activeInput': {
                 'weiboDataControl': weiboDataControl,
-                'zpzControl': zpzControl,
+                'loopRepostControl': loopRepostControl,
+                'loopCommentLikeControl': loopCommentLikeControl,
                 'spCheckIn': spCheckIn,
                 'amanComment': amanComment,
                 'reading': reading,
@@ -253,6 +299,7 @@ $(function () {
                 'repostContent': repostContent,
                 'randomRepost': randomRepost,
                 'commentContent': commentContent,
+                'lzl': lzl,
                 'randomComment': randomComment,
                 'likeOrigin': likeOrigin
             }
@@ -266,14 +313,17 @@ $(function () {
     sendbuttonToggle = function () {
         console.log('send');
         var weiboDataControl = $('#weiboDataControl').is(":checked");
-        var zpzControl = $('#zpzControl').is(":checked");
-        if (weiboDataControl || zpzControl) {
+        var loopRepostControl = $('#loopRepostControl').is(":checked");
+        var loopCommentLikeControl = $('#loopCommentLikeControl').is(":checked");
+        if (weiboDataControl || loopRepostControl || loopCommentLikeControl) {
             chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                 disableInputs();
+                disableCommentControl();
                 showStopbutton();
                 chrome.runtime.sendMessage(null, {
                     'type': 'start',
                     'from': 'popup',
+                    'mode': 'normal',
                     'tabId': tabs[0]["id"],
                 }, null, function (result) {
                     if (!result.isSuccess) {
@@ -289,7 +339,7 @@ $(function () {
 
     stopbuttonToggle = function () {
         console.log('stop');
-        chrome.runtime.sendMessage(null, { 'type': 'stop', 'from': 'popup' }, null, function (result) {
+        chrome.runtime.sendMessage(null, { 'type': 'stop', 'from': 'popup', 'mode': 'normal' }, null, function (result) {
             if (result) {
                 showOkbutton();
             }
@@ -298,9 +348,10 @@ $(function () {
 
     okbuttonToggle = function () {
         console.log('ok');
-        chrome.runtime.sendMessage(null, { 'type': 'reset', 'from': 'popup' }, null, function (msg) {
+        chrome.runtime.sendMessage(null, { 'type': 'reset', 'from': 'popup', 'mode': 'normal' }, null, function (msg) {
             console.log('ok response from background: ' + JSON.stringify(msg));
             enableInputs();
+            enableCommentControl();
             showSendbutton();
             setView(msg['activeInput']);
             setState(msg['activeMsg']);
@@ -311,47 +362,68 @@ $(function () {
     chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         if (msg['from'] == 'content' && msg['type'] == 'state') {
             console.log('state message received from content');
-            setState(msg['activeMsg']);
+            if (msg['mode'] == 'normal') {
+                setState(msg['activeMsg']);
+            } else {
+                setCcState(msg['activeCcMsg']);
+            }
         } else if (msg['from'] == 'background' && msg['type'] == 'state') {
             console.log('state message received from background');
             setState(msg['activeMsg']);
         } else if (msg['from'] == 'background' && msg['type'] == 'finished') {
             console.log('finished message received from background');
-            if (msg['reason']) {
-                alert(msg['reason']);
+            if (msg['mode'] == 'normal') {
+                if (msg['reason']) {
+                    alert(msg['reason']);
+                }
+                showOkbutton();
+            } else {
+                showCcOkbutton();
             }
-            showOkbutton();
         }
     });
     //requestView
     chrome.runtime.sendMessage(null, { 'type': 'view', 'from': 'popup' }, null, function (msg) {
         console.log('requestView: ' + JSON.stringify(msg));
+        disableInputs();
+        disableCommentControl();
         if (msg['activeState'] == 'running') {
-            disableInputs();
             showStopbutton();
         } else if (msg['activeState'] == 'finished') {
-            disableInputs();
             showOkbutton();
-        } else {
-            enableInputs();
+        } else if (msg['activeState'] == 'ready') {
             showSendbutton();
+            if (msg['activeCcState'] == 'running') {
+                showCcStopbutton();
+            } else if (msg['activeCcState'] == 'finished') {
+                showCcOkbutton();
+            } else if (msg['activeCcState'] == 'ready') {
+                enableInputs();
+                enableCommentControl();
+                showCcStartbutton();
+            }
         }
+
         if (msg['activeControl'] === 'weiboData') {
-            $('a[href$="#weiboData"]').addClass('active');
-            $('#weiboData').addClass('active');
-            $('#weiboData').removeClass('fade');
-
-            $('a[href$="#zpz"]').removeClass('active');
-            $('#zpz').addClass('fade');
-            $('#zpz').removeClass('active');
-        } else if (msg['activeControl'] === 'zpz') {
-            $('a[href$="#zpz"]').addClass('active');
-            $('#zpz').addClass('active');
-            $('#zpz').removeClass('fade');
-
-            $('a[href$="#weiboData"]').removeClass('active');
-            $('#weiboData').addClass('fade');
-            $('#weiboData').removeClass('active');
+            displayWeiboData();
+            concealRepost();
+            concealCommentLike();
+            concealCommentControl();
+        } else if (msg['activeControl'] === 'repost') {
+            displayRepost();
+            concealCommentLike();
+            concealWeiboData();
+            concealCommentControl();
+        } else if (msg['activeControl'] === 'commentLike') {
+            displayCommentLike();
+            concealRepost();
+            concealWeiboData();
+            concealCommentControl();
+        } else if (msg['activeControl'] === 'commentControl') {
+            displayCommentControl();
+            displayWeiboData();
+            concealRepost();
+            concealCommentLike();
         }
 
         if (!jQuery.isEmptyObject(msg['activeInput'])) {
@@ -359,6 +431,13 @@ $(function () {
             setState(msg['activeMsg']);
         } else {
             setInput();
+        }
+
+        if (!jQuery.isEmptyObject(msg['activeCcInput'])) {
+            setCcView(msg['activeCcInput']);
+            setCcState(msg['activeCcMsg']);
+        } else {
+            setCcInput();
         }
     });
 
@@ -376,10 +455,12 @@ $(function () {
 
     $('input').on('change', function () {
         setInput();
+        setCcInput();
     });
 
     $('textarea').on('change', function () {
         setInput();
+        setCcInput();
     });
 
     $('[name=rpContentType]').on('change', function () {
@@ -396,5 +477,152 @@ $(function () {
         } else {
             $('#commentContent').hide();
         }
+    });
+
+    // comment control:
+    disableCommentControl = function () {
+        $('#modeswitch').attr('disabled', 'disabled');
+    };
+    enableCommentControl = function () {
+        $('#modeswitch').removeAttr('disabled');
+    };
+
+    displayCommentControl = function () {
+        $('#overlay').show();
+        $('#commentControl').show();
+        $('#modeswitch').html('关闭');
+    };
+    concealCommentControl = function () {
+        $('#commentControl').hide();
+        $('#overlay').hide();
+        $('#modeswitch').html('控评模式 🔼');
+    };
+
+    showCcStartbutton = function () {
+        $('#ccstartbutton').show();
+        $('#ccstopbutton').hide();
+        $('#ccokbutton').hide();
+    };
+    showCcStopbutton = function () {
+        $('#ccstopbutton').show();
+        $('#ccstartbutton').hide();
+        $('#ccokbutton').hide();
+    };
+    showCcOkbutton = function () {
+        $('#ccokbutton').show();
+        $('#ccstartbutton').hide();
+        $('#ccstopbutton').hide();
+    };
+
+    setCcState = function (msg) {
+        var commentControlSofar = '';
+
+        if (!jQuery.isEmptyObject(msg)) {
+            if ((msg['commentControlCount'] != null && msg['commentControlCount'] > 0) || !!msg['commentControlMsg']) {
+                commentControlSofar = '已点赞' + msg['commentControlCount'] + '个评论。' + msg['commentControlMsg'];
+            }
+        }
+        $('#commentControlSofar').text(commentControlSofar);
+    }
+    setCcView = function (details) {
+        $('#ccWeiboUrl').val(details['ccWeiboUrl']);
+        $('#commentControlInput').val(details['commentControlInput']);
+        $('#ccPostiveTags').val(details['ccPostiveTags']);
+        $('#ccNegativeTags').val(details['ccNegativeTags']);
+        if (details['nz']) {
+            $('#nz').prop('checked', true);
+        } else {
+            $('#nz').prop('checked', false);
+        }
+    }
+
+    setCcInput = function () {
+        var ccWeiboUrl = $('#ccWeiboUrl').val();
+        var commentControlInput = $('#commentControlInput').val();
+        var ccPostiveTags = $('#ccPostiveTags').val();
+        var ccNegativeTags = $('#ccNegativeTags').val();
+        var nz = $('#nz').is(":checked");
+        commentControlInput = commentControlInput - 0;
+        if (ccWeiboUrl == null || !ccWeiboUrl) ccWeiboUrl = '';
+        if (commentControlInput == null || isNaN(commentControlInput)) commentControlInput = 0;
+        if (ccPostiveTags == null || !ccPostiveTags) ccPostiveTags = '';
+        if (ccNegativeTags == null || !ccNegativeTags) ccNegativeTags = '';
+        if (nz == null) nz = true;
+
+        chrome.runtime.sendMessage(null, {
+            'type': 'input',
+            'from': 'popup',
+            'mode': 'commentControl',
+            'activeCcInput': {
+                'ccWeiboUrl': ccWeiboUrl,
+                'commentControlInput': commentControlInput,
+                'ccPostiveTags': ccPostiveTags,
+                'ccNegativeTags': ccNegativeTags,
+                'nz': nz
+            }
+        }, null, function (msg) {
+            if (!!msg) {
+                console.log(msg);
+            }
+        });
+    }
+
+    ccstartbuttonToggle = function () {
+        console.log('ccstart');
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            disableInputs();
+            disableCommentControl();
+            showCcStopbutton();
+            chrome.runtime.sendMessage(null, {
+                'type': 'start',
+                'from': 'popup',
+                'mode': 'commentControl',
+                'tabId': tabs[0]["id"],
+            }, null, function (result) {
+                if (!result.isSuccess) {
+                    showCcOkbutton();
+                }
+                if (result.msg) {
+                    alert(result.msg);
+                }
+            });
+        });
+    }
+    ccstopbuttonToggle = function () {
+        console.log('ccstop');
+        chrome.runtime.sendMessage(null, { 'type': 'stop', 'from': 'popup', 'mode': 'commentControl' }, null, function (result) {
+            if (result) {
+                showCcOkbutton();
+            }
+        });
+    }
+    ccokbuttonToggle = function () {
+        console.log('ccok');
+        chrome.runtime.sendMessage(null, { 'type': 'reset', 'from': 'popup', 'mode': 'commentControl' }, null, function (msg) {
+            console.log('cc ok response from background: ' + JSON.stringify(msg));
+            enableInputs();
+            enableCommentControl();
+            showCcStartbutton();
+            setCcView(msg['activeCcInput']);
+            setCcState(msg['activeCcMsg']);
+        });
+    }
+
+    $('#modeswitch').on('click', function () {
+        if($('#commentControl').is(':visible')){
+            concealCommentControl();
+        } else {
+            displayCommentControl();
+        }
+    });
+
+    $('#ccstartbutton').on('click', function () {
+        ccstartbuttonToggle();
+    });
+    $('#ccstopbutton').on('click', function () {
+        ccstopbuttonToggle();
+    });
+    $('#ccokbutton').on('click', function () {
+        ccokbuttonToggle();
     });
 });
