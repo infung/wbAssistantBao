@@ -2,7 +2,7 @@
 const VICESUPERTOPIC = "https://weibo.com/p/100808cd19f50b7e758a497f78651157aecdc5/super_index";
 const BUSYTEXTS = ['休息一会', '验证码', '频繁', '繁忙', '提交失败', 'Cannot do this operation'];
 const WBAUTHORS = ['INTO1官博', '哇唧唧哇'];
-const NOBODYCARES = ['@INTO1-尹浩宇', '@INTO1-高卿尘', '@INTO1-米卡', '@INTO1-刘宇', '@INTO1-力丸', '@INTO1-林墨', '@INTO1-周柯宇', '@INTO1-张嘉元'];
+const NOBODYCARES = ['INTO1-尹浩宇', 'INTO1-高卿尘', 'INTO1-米卡', 'INTO1-刘宇', 'INTO1-力丸', 'INTO1-林墨', 'INTO1-周柯宇', 'INTO1-张嘉元', 'INTO1-刘彰'];
 
 var activeMsg = {
     spCheckInStatus: false,
@@ -124,14 +124,14 @@ async function checkBoYuanOnly() {
             break;
         }
         //case 1: boyuan's weibo or the weibo that reposted boyuan's weibo 
-        if (wbInfoList.snapshotItem(i).text === '@INTO1-伯远' ||
+        if (wbInfoList.snapshotItem(i).text === 'INTO1-伯远' ||
             (wbInfoList.snapshotItem(i).title === 'INTO1-伯远' || wbInfoList.snapshotItem(i).href === 'https://weibo.com/xevier')) {
             boyuanFlag = true;
             break;
         }
         //case 2: the weibo that mentions boyuan or the weibo that mentions 'bo' and 'yuan' separately but reposted into1 and wjja weibo
         if (wbContent.textContent.indexOf('伯远') !== -1 ||
-            (wbContent.textContent.indexOf('伯') !== -1 && wbContent.textContent.indexOf('远') !== -1 && WBAUTHORS.indexOf(wbInfoList.snapshotItem(i).title) > -1)) {
+            (wbContent.textContent.indexOf('伯') !== -1 && wbContent.textContent.indexOf('远') !== -1 && WBAUTHORS.indexOf(wbInfoList.snapshotItem(i).text) > -1)) {
             boyuanFlag = true;
             break;
         }
@@ -317,9 +317,9 @@ async function clickLike(numOfLike) {
         like = likes.snapshotItem(i);
         if (like.title === '赞') {
             like.click();
-            activeMsg.likeCount++;
             await sleep(1000);
             response = await handlePopup();
+            if (response.code === '100000') activeMsg.likeCount++;
             activeMsg.likeMsg = response.msg;
             sendState();
             //for like popup, kill the process immediately without waiting for animation, since it's the final round.
@@ -838,41 +838,78 @@ function sendCcState() {
     }
 }
 
-async function clickTargetLike(numOfLike, lstPermitWords, lstForbidWords, clickInnerLike) {
-    console.log('filter and click');
+async function clickInnerLike(numOfLike, commentCard, wbAuthor) {
+    var response = { 'code': '100000', 'msg': '' };
+    // expand second level comments
+    var secLevel = commentCard.getElementsByClassName('list_li_v2');
+    if (secLevel === null || secLevel.length === 0) {
+        return response;
+    }
+    var btns = commentCard.getElementsByClassName('list_li_v2')[0].getElementsByTagName('a');
+    var clickMoreComments = btns[btns.length - 1];
+    clickMoreComments.click();
+    await sleep(1000);
+    // find the comment that @ author
+    var hasFound = false;
+    var subComments = commentCard.getElementsByClassName('list_li S_line1 clearfix');
+    var len = subComments.length;
+    for (var i = 0; i < len; i++) {
+        var subComment = subComments[i].getElementsByClassName('WB_text')[0].textContent;
+        subComment = subComment.substring(subComment.indexOf('：'));
+        if(subComment.indexOf(wbAuthor) !== -1) {
+            //console.log('target inner comment found: ' + subComment);
+            hasFound = true;
+            var subCommentBtns = subComments[i].getElementsByClassName('WB_func clearfix')[0].getElementsByTagName('a');
+            var subCommentLike = subCommentBtns[subCommentBtns.length - 1];
+            if (subCommentLike.title === '赞') {
+                subCommentLike.click();
+                await sleep(1000);
+                response = await handlePopup();
+                if (response.code === '100000') activeCcMsg.commentControlCount++;
+                activeCcMsg.commentControlMsg= response.msg;
+                sendCcState();
+                if (!ccrunning || activeCcMsg.commentControlCount >= numOfLike || response.code !== '100000') break;
+            }
+        }
+        if(hasFound) break;
+    }
+    return response;
+}
+
+async function clickTargetLike(numOfLike, lstPermitWords, lstForbidWords, innerLike, wbAuthor) {
+    var commentCards = await getElementsByXPath('//div[@class="list_con" and @node-type="replywrap"]');
     var commentCotents = await getElementsByXPath('//div[@class="list_con" and @node-type="replywrap"]/div[@class="WB_text"][1]');
     var commentLikes = await getElementsByXPath('//div[@class="list_con" and @node-type="replywrap"]/div[@class="WB_func clearfix"]//a[@class="S_txt1" and @action-type="fl_like"]');
     var numComments = commentCotents.snapshotLength;
     var currComment = null;
-    var targetComment = false;
+    var isTargetComment = false;
     var targetLike = null;
     var response = { 'code': '100000', 'msg': '' };
     for (var i = 0; i < numComments; i++) {
         currComment = commentCotents.snapshotItem(i).textContent;
         currComment = currComment.substring(currComment.indexOf('：'));
-        targetComment = lstPermitWords.some((text) => currComment.indexOf(text) !== -1);
-        targetComment = targetComment && !(lstForbidWords.some((text) => currComment.indexOf(text) !== -1));
-        if (targetComment) {
+        isTargetComment = lstPermitWords.some((text) => currComment.indexOf(text) !== -1);
+        isTargetComment = isTargetComment && !(lstForbidWords.some((text) => currComment.indexOf(text) !== -1));
+        if (isTargetComment) {
+            //console.log('target comment found: ' + currComment);
             targetLike = commentLikes.snapshotItem(i);
             if (targetLike.title === '赞') {
                 targetLike.click();
-                activeCcMsg.commentControlCount++;
                 await sleep(1000);
                 response = await handlePopup();
+                if (response.code === '100000') activeCcMsg.commentControlCount++;
                 activeCcMsg.commentControlMsg= response.msg;
                 sendCcState();
                 //for like popup, kill the process immediately without waiting for animation, since it's the final round.
                 if (!ccrunning || activeCcMsg.commentControlCount >= numOfLike || response.code !== '100000') break;
             }
+            if (innerLike) {
+                response = await clickInnerLike(numOfLike, commentCards.snapshotItem(i), wbAuthor);
+                if (!ccrunning || activeCcMsg.commentControlCount >= numOfLike || response.code !== '100000') break;
+            }
         }
     }
     return response;
-}
-
-async function clickInnerLike() {
-    var innerCommentsButtons = await getElementsByXPath('//a[@action-type="click_more_child_comment_big"]');
-    innerCommentsButtons.snapshotItem(0).click();
-    await sleep(1500);
 }
 
 async function likeWeiboWithRules(numLikes, lstPermitWords, lstForbidWords, clickInnerLike) {
@@ -882,17 +919,24 @@ async function likeWeiboWithRules(numLikes, lstPermitWords, lstForbidWords, clic
     await sleep(1000);
 
     // sort by polpularity
-    var sortButton = await getElementsByXPath('//a[@class="S_txt1 " and @action-type="search_type"]');
-    if (sortButton.snapshotLength > 0) {
-        sortButton.snapshotItem(0).click();
-        await sleep(1000);
+    var sortButton = await getElementsByXPath('//a[@action-type="search_type"]');
+    var sortBtnslen = sortButton.snapshotLength;
+    for (var i = 0; i < sortBtnslen; i++) {
+        if (sortButton.snapshotItem(i).textContent.indexOf('热度') !== -1) {
+            sortButton.snapshotItem(i).click();
+            await sleep(1000);
+            break;
+        }
     }
 
-    console.log('ready to click like');
+    // obtain wb author for inner like check
+    var wbInfo = await getElementsByXPath('//div[@class="WB_info"]/a');
+    var wbAuthor = wbInfo.snapshotItem(0).text;
+    wbAuthor = '@' + wbAuthor;
 
     var response = null;
     while (ccrunning) {
-        response = await clickTargetLike(numLikes, lstPermitWords, lstForbidWords, clickInnerLike);
+        response = await clickTargetLike(numLikes, lstPermitWords, lstForbidWords, clickInnerLike, wbAuthor);
         console.log('已点赞：' + activeCcMsg.commentControlCount);
         if (!ccrunning || activeCcMsg.commentControlCount >= numLikes) {
             break;
@@ -915,7 +959,7 @@ async function likeWeiboWithRules(numLikes, lstPermitWords, lstForbidWords, clic
 async function commentControl(numLikes, permitWords, forbidWords, clickInnerLike) {
     console.log('commentControl starts');
     var lstPermitWords = ['伯远'];
-    lstPermitWords = lstPermitWords.concat(permitWords.split(' '));
+    lstPermitWords = permitWords ? lstPermitWords.concat(permitWords.split(' ')) : lstPermitWords;
     var lstForbidWords = forbidWords.split(' ');
     if (numLikes !== 0 && ccrunning) activeCcMsg.commentControlCount = await likeWeiboWithRules(numLikes, lstPermitWords, lstForbidWords, clickInnerLike);
     if (!ccrunning) {
