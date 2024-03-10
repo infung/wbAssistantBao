@@ -1,3 +1,3 @@
-# wbAssistantBao
+# weiboAssistantBY
 
-chrome extension for wb.
+chrome extension for weibo (only for idol BY).
